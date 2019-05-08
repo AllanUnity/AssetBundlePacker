@@ -5,11 +5,12 @@ using System.Text;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace zcode.AssetBundlePacker
+namespace GS.AssetBundlePacker
 {
     /// <summary>资源管理器--- 负责游戏中的AssetBundle资源加载</summary>
     public class AssetBundleManager : MonoSingleton<AssetBundleManager>
     {
+        #region Data
 #if UNITY_EDITOR
         /// <summary>当前平台是否支持AssetBundle</summary>
         public static readonly bool IsPlatformSupport = true;
@@ -26,30 +27,21 @@ namespace zcode.AssetBundlePacker
 
         /// <summary>最新的资源版本</summary>
         public string strVersion;
-
         /// <summary>是否准备完成</summary>
         public bool IsReady { get; private set; }
-
         /// <summary>是否出错</summary>
         public bool IsFailed { get { return ErrorCode != emErrorCode.None; } }
-
-        /// <summary>
-        /// 
-        /// </summary>
+        /// <summary>错误类型</summary>
         public emErrorCode ErrorCode { get; private set; }
 
         /// <summary>主AssetBundleMainfest</summary>
         public AssetBundleManifest MainManifest { get; private set; }
-
         /// <summary>资源描述数据</summary>
         public ResourcesManifest ResManifest { get; private set; }
-
         /// <summary>资源包数据</summary>
         public ResourcesPackages ResPackages { get; private set; }
-
         /// <summary>常驻的AssetBundle</summary>
         private Dictionary<string, AssetBundle> assetbundle_permanent_;
-
         /// <summary>缓存的AssetBundle</summary>
         private Dictionary<string, Cache> assetbundle_cache_;
 
@@ -63,7 +55,103 @@ namespace zcode.AssetBundlePacker
         /// <summary>正在异步载入的AssetBundle</summary>
         private HashSet<string> assetbundle_async_loading_;
 
-        protected AssetBundleManager() { }
+        #endregion
+        #region MonoBahaviour
+
+        void Awake()
+        {
+            Launch();
+        }
+
+        void OnDestroy()
+        {
+            ShutDown();
+        }
+        #endregion
+        #region 启动
+        /// <summary>启动(仅内部启用)</summary>
+        void Launch()
+        {
+            if (assetbundle_permanent_ == null)
+            {
+                assetbundle_permanent_ = new Dictionary<string, AssetBundle>();
+            }
+            if (assetbundle_cache_ == null)
+            {
+                assetbundle_cache_ = new Dictionary<string, Cache>();
+            }
+            if (asset_dependency_cache_ == null)
+            {
+                asset_dependency_cache_ = new Dictionary<string, AssetDependCache>();
+            }
+            if (assetbundle_async_loading_ == null)
+            {
+                assetbundle_async_loading_ = new HashSet<string>();
+            }
+            strVersion = "";
+            IsReady = false;
+            ErrorCode = emErrorCode.None;
+
+            if (IsPlatformSupport)
+            {
+                StopAllCoroutines();
+                StartCoroutine(Preprocess());
+            }
+            else
+            {
+                IsReady = true;
+            }
+        }
+        /// <summary>当前状态进度</summary>
+        public PreprocessInformation preprocessInformation { get; private set; }
+
+        /// <summary>初始化</summary>
+        IEnumerator Preprocess()
+        {
+            preprocessInformation = new PreprocessInformation();
+
+            //判断主资源文件是否存在，不存在则拷贝备份资源至资源根目录
+            string ab_manifest_file = Common.GetFileFullName(Common.MAIN_MANIFEST_FILE_NAME);
+            string resources_manifest_file = Common.GetFileFullName(Common.RESOURCES_MANIFEST_FILE_NAME);
+            if (!File.Exists(ab_manifest_file) || !File.Exists(resources_manifest_file))
+            {
+                // 初始化安装包资源
+                preprocessInformation.UpdateState(emPreprocessState.Install);
+                yield return PreProcessInstallNativeAssets();
+            }
+            else
+            {
+                // 更新本地资源
+                preprocessInformation.UpdateState(emPreprocessState.Update);
+                yield return PreprocessUpdateNativeAssets();
+            }
+
+            // 更新配置文件
+            yield return PreprocessUpdateAllConfig();
+
+            // 加载资源
+            preprocessInformation.UpdateState(emPreprocessState.Load);
+            yield return PreprocessLoad();
+
+
+            // 结束前处理工作
+            preprocessInformation.UpdateState(emPreprocessState.Dispose);
+            yield return PreprocessDispose();
+
+            //结束处理
+            preprocessInformation.UpdateState(IsFailed ? emPreprocessState.Failed : emPreprocessState.Completed);
+            yield return PreprocessFinished();
+
+            preprocessInformation = null;
+        }
+        #endregion
+        /// <summary>关闭</summary>
+        void ShutDown()
+        {
+            StopAllCoroutines();
+            UnloadAllAssetBundle(true);
+        }
+
 
         /// <summary>重启</summary>
         public bool Relaunch()
@@ -750,9 +838,6 @@ namespace zcode.AssetBundlePacker
             return 0;
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
         public void Error(emErrorCode ec, string message = null)
         {
             ErrorCode = ec;
@@ -763,46 +848,6 @@ namespace zcode.AssetBundlePacker
             Debug.LogError(sb.ToString());
         }
 
-        /// <summary>启动(仅内部启用)</summary>
-        void Launch()
-        {
-            if (assetbundle_permanent_ == null)
-            {
-                assetbundle_permanent_ = new Dictionary<string, AssetBundle>();
-            }
-            if (assetbundle_cache_ == null)
-            {
-                assetbundle_cache_ = new Dictionary<string, Cache>();
-            }
-            if (asset_dependency_cache_ == null)
-            {
-                asset_dependency_cache_ = new Dictionary<string, AssetDependCache>();
-            }
-            if (assetbundle_async_loading_ == null)
-            {
-                assetbundle_async_loading_ = new HashSet<string>();
-            }
-            strVersion = "";
-            IsReady = false;
-            ErrorCode = emErrorCode.None;
-
-            if (IsPlatformSupport)
-            {
-                StopAllCoroutines();
-                StartCoroutine(Preprocess());
-            }
-            else
-            {
-                IsReady = true;
-            }
-        }
-
-        /// <summary>关闭</summary>
-        void ShutDown()
-        {
-            StopAllCoroutines();
-            UnloadAllAssetBundle(true);
-        }
 
         #region Loader
         /// <summary>资源异步加载器</summary>
@@ -1022,101 +1067,6 @@ namespace zcode.AssetBundlePacker
         #endregion
 
         #region Preprocess
-        /// <summary>状态</summary>
-        public enum emPreprocessState
-        {
-            None,               // 无
-            Install,            // 安装包资源初始化
-            Update,             // 最新版本资源拷贝
-            Load,               // 游戏初始资源加载
-            Dispose,            // 后备工作
-            Completed,          // 完成
-            Failed,             // 失败
-        }
-
-        /// <summary>预加载信息</summary>
-        public class PreprocessInformation
-        {
-            /// <summary>当前状态</summary>
-            public emPreprocessState State { get; private set; }
-
-            /// <summary>当前状态的进度</summary>
-            public float Progress { get; private set; }
-
-            /// <summary>当前状态的的总量值</summary>
-            public float Total { get; private set; }
-
-            /// <summary>当前状态的进度</summary>
-            public float CurrentStateProgressPercent { get { return Total != 0 ? Progress / Total : 0f; } }
-
-            /// <summary>是否需要拷贝所有配置文件</summary>
-            public bool NeedCopyAllConfig;
-
-            public PreprocessInformation()
-            {
-                this.State = emPreprocessState.None;
-                this.Progress = 0f;
-                this.Total = 1f;
-            }
-
-            /// <summary>更新</summary>
-            public void UpdateState(emPreprocessState state)
-            {
-                this.State = state;
-                this.Progress = 0f;
-                this.Total = 1f;
-            }
-
-            /// <summary>更新</summary>
-            public void UpdateProgress(float value, float total)
-            {
-                this.Progress = value;
-                this.Total = total;
-            }
-        }
-
-        /// <summary>当前状态进度</summary>
-        public PreprocessInformation preprocessInformation { get; private set; }
-
-        /// <summary>初始化</summary>
-        IEnumerator Preprocess()
-        {
-            preprocessInformation = new PreprocessInformation();
-
-            //判断主资源文件是否存在，不存在则拷贝备份资源至资源根目录
-            string ab_manifest_file = Common.GetFileFullName(Common.MAIN_MANIFEST_FILE_NAME);
-            string resources_manifest_file = Common.GetFileFullName(Common.RESOURCES_MANIFEST_FILE_NAME);
-            if (!File.Exists(ab_manifest_file) || !File.Exists(resources_manifest_file))
-            {
-                // 初始化安装包资源
-                preprocessInformation.UpdateState(emPreprocessState.Install);
-                yield return PreProcessInstallNativeAssets();
-            }
-            else
-            {
-                // 更新本地资源
-                preprocessInformation.UpdateState(emPreprocessState.Update);
-                yield return PreprocessUpdateNativeAssets();
-            }
-
-            // 更新配置文件
-            yield return PreprocessUpdateAllConfig();
-
-            // 加载资源
-            preprocessInformation.UpdateState(emPreprocessState.Load);
-            yield return PreprocessLoad();
-
-
-            // 结束前处理工作
-            preprocessInformation.UpdateState(emPreprocessState.Dispose);
-            yield return PreprocessDispose();
-
-            //结束处理
-            preprocessInformation.UpdateState(IsFailed ? emPreprocessState.Failed : emPreprocessState.Completed);
-            yield return PreprocessFinished();
-
-            preprocessInformation = null;
-        }
 
         /// <summary>初始化 - 安装包资源初始化</summary>
         IEnumerator PreProcessInstallNativeAssets()
@@ -1249,9 +1199,8 @@ namespace zcode.AssetBundlePacker
                 {
                     string full_name = Common.GetFileFullName(delete_files[i]);
                     if (File.Exists(full_name))
-                    {
                         File.Delete(full_name);
-                    }
+
                     yield return null;
                     preprocessInformation.UpdateProgress(++progress, count);
                 }
@@ -1265,9 +1214,7 @@ namespace zcode.AssetBundlePacker
                     preprocessInformation.UpdateProgress(c.progress, c.total);
                 });
                 if (IsFailed)
-                {
                     yield break;
-                }
             }
         }
 
@@ -1297,8 +1244,7 @@ namespace zcode.AssetBundlePacker
                     }
                 }
 
-                // 拷贝失败则需要把本地配置文件删除
-                // （由于部分配置文件拷贝失败，会导致本地的配置文件不匹配会引起版本信息错误， 统一全部删除则下次进入游戏会重新拷贝全部数据）
+                // 拷贝失败则需要把本地配置文件删除（由于部分配置文件拷贝失败，会导致本地的配置文件不匹配会引起版本信息错误， 统一全部删除则下次进入游戏会重新拷贝全部数据）
                 if (IsFailed)
                 {
                     for (int i = 0; i < Common.CONFIG_NAME_ARRAY.Length; ++i)
@@ -1347,9 +1293,7 @@ namespace zcode.AssetBundlePacker
                 {
                     //预加载的初始化AssetBundle必须无任何依赖
                     if (itr.Current.Value.IsStartupLoad && !HasDependencies(itr.Current.Key))
-                    {
                         permanentAssetBundles.Add(itr.Current.Key);
-                    }
                 }
                 itr.Dispose();
 
@@ -1449,19 +1393,6 @@ namespace zcode.AssetBundlePacker
                 "WriteException!" : "WriteException, " + message;
                 Error(emErrorCode.WriteException, ms);
             }
-        }
-        #endregion
-
-        #region MonoBahaviour
-
-        void Awake()
-        {
-            Launch();
-        }
-
-        void OnDestroy()
-        {
-            ShutDown();
         }
         #endregion
     }

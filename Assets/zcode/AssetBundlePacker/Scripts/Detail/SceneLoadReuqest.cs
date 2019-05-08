@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace zcode.AssetBundlePacker
+namespace GS.AssetBundlePacker
 {
     /// <summary>场景异步加载请求</summary>
     public sealed class SceneLoadRequest : YieldInstruction

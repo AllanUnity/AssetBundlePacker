@@ -2,20 +2,15 @@
 using System.IO;
 using UnityEngine;
 
-namespace zcode.AssetBundlePacker
+namespace GS.AssetBundlePacker
 {
     public class ComparisonUtils
     {
-        /// <summary>
-        ///   比较本地数据，获得需要修复的资源文件列表
-        /// </summary>
-        public static void CompareAndCalcRecoverFiles(ref List<string> recover_files
-                                    , ResourcesManifest resourcesmanifest)
+        /// <summary>比较本地数据，获得需要修复的资源文件列表</summary>
+        public static void CompareAndCalcRecoverFiles(ref List<string> recover_files, ResourcesManifest resourcesmanifest)
         {
             if (resourcesmanifest == null)
-            {
                 return;
-            }
 
             var itr = resourcesmanifest.Data.AssetBundles.GetEnumerator();
             while (itr.MoveNext())
@@ -25,25 +20,21 @@ namespace zcode.AssetBundlePacker
                     string name = itr.Current.Value.AssetBundleName;
                     string full_name = Common.GetFileFullName(name);
                     if (!File.Exists(full_name))
-                    {
                         recover_files.Add(name);
-                    }
                 }
             }
         }
 
-        /// <summary>
-        /// 比较方式
-        /// </summary>
+        /// <summary>比较方式</summary>
         public enum emCompareMode
         {
-            OnlyInitial,        ///< 仅与安装包比较（用于重装更新）
-            All,                ///< 全部比较（用于更新器更新）
+            /// <summary>仅与安装包比较（用于重装更新）</summary>
+            OnlyInitial,
+            /// <summary>全部比较（用于更新器更新）</summary>
+            All,               
         }
 
-        /// <summary>
-        ///   比较AssetBundle差异，获得增量更新列表与删除列表
-        /// </summary>
+        /// <summary>比较AssetBundle差异，获得增量更新列表与删除列表</summary>
         public static void CompareAndCalcDifferenceFiles(ref List<string> download_files
                                                 , ref List<string> delete_files
                                                 , AssetBundleManifest old_manifest
@@ -52,7 +43,7 @@ namespace zcode.AssetBundlePacker
                                                 , ResourcesManifest new_resourcesmanifest
                                                 , emCompareMode compareMode)
         {
-            if(download_files == null)
+            if (download_files == null)
             {
                 return;
             }
@@ -109,7 +100,7 @@ namespace zcode.AssetBundlePacker
                     {
                         string name = resource_manifest_itr.Current.Value.AssetBundleName;
                         string full_name = Common.GetFileFullName(Common.RESOURCES_MANIFEST_FILE_NAME);
-                        if(File.Exists(full_name))
+                        if (File.Exists(full_name))
                         {
                             _SetDictionaryBit(ref temp_dic, name, old_version_native_bit);
                         }
@@ -153,7 +144,7 @@ namespace zcode.AssetBundlePacker
                     // 如果为emCompareMode.OnlyInitial比较方式，则需确定是否为本地资源
                     if (compareMode == emCompareMode.OnlyInitial)
                     {
-                        if((mask & new_version_native_bit) == new_version_native_bit)
+                        if ((mask & new_version_native_bit) == new_version_native_bit)
                         {
                             both_files.Add(name);
                         }
@@ -199,9 +190,6 @@ namespace zcode.AssetBundlePacker
             }
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
         public static void _SetDictionaryBit(ref Dictionary<string, int> dic, string name, int bit)
         {
             if (!dic.ContainsKey(name))

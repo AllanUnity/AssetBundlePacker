@@ -1,7 +1,4 @@
 ﻿/***************************************************************
- * Copyright 2016 By Zhang Minglin
- * Author: Zhang Minglin
- * Create: 2016/03/18
  * Note  : AssetBundle打包规则配置数据
 ***************************************************************/
 using UnityEngine;
@@ -10,7 +7,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 
-namespace zcode.AssetBundlePacker
+namespace GS.AssetBundlePacker
 {
     /// <summary>
     /// 

@@ -1,7 +1,7 @@
 ﻿using System.IO;
 using UnityEngine;
 
-namespace zcode.AssetBundlePacker
+namespace GS.AssetBundlePacker
 {
     /// <summary>资源加载器</summary>
     public static class ResourcesManager

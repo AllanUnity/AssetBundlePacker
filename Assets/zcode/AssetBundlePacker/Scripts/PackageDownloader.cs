@@ -1,111 +1,75 @@
-﻿/***************************************************************
- * Copyright 2016 By Zhang Minglin
- * Author: Zhang Minglin
- * Create: 2016/03/14
- * Note  : AssetBundle包下载器
-***************************************************************/
-using UnityEngine;
+﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 
-namespace zcode.AssetBundlePacker
+namespace GS.AssetBundlePacker
 {
+    /// <summary>AssetBundle包下载器</summary>
     public class PackageDownloader : MonoBehaviour
     {
-        /// <summary>
-        ///   状态
-        /// </summary>
+        /// <summary>状态</summary>
         public enum emState
         {
-            None,               // 无
-            VerifyURL,          // 验证有效的URL
-            DownloadAssetBundle,// 下载AssetBundle
-            Completed,          // 完成
-            Failed,             // 失败
-            Cancel,             // 取消
-            Abort,              // 中断
+            /// <summary>无</summary>
+            None,
+            /// <summary>验证有效的URL</summary>
+            VerifyURL,
+            /// <summary>下载AssetBundle</summary>
+            DownloadAssetBundle,
+            /// <summary>完成</summary>
+            Completed,
+            /// <summary>失败</summary>
+            Failed,
+            /// <summary>取消</summary>
+            Cancel,
+            /// <summary>中断</summary>
+            Abort,
 
             Max
         }
 
-        /// <summary>
-        ///   UpdateEvent
-        /// </summary>
+        /// <summary>UpdateEvent</summary>
         public event System.Action<PackageDownloader> OnUpdate;
 
-        /// <summary>
-        ///   DoneEvent
-        /// </summary>
+        /// <summary>DoneEvent</summary>
         public event System.Action<PackageDownloader> OnDone;
 
-        /// <summary>
-        ///   是否结束
-        /// </summary>
+        /// <summary>是否结束</summary>
         public bool IsDone { get; private set; }
 
-        /// <summary>
-        ///   是否出错
-        /// </summary>
-        public bool IsFailed
-        {
-            get { return ErrorCode != emErrorCode.None; }
-        }
+        /// <summary>是否出错</summary>
+        public bool IsFailed { get { return ErrorCode != emErrorCode.None; } }
 
-        /// <summary>
-        ///   错误代码
-        /// </summary>
+        /// <summary>错误代码</summary>
         public emErrorCode ErrorCode { get; private set; }
 
-        /// <summary>
-        ///   当前状态
-        /// </summary>
+        /// <summary>当前状态</summary>
         public emState CurrentState { get; private set; }
 
-        /// <summary>
-        ///   当前状态的完成度
-        /// </summary>
+        /// <summary>当前状态的完成度</summary>
         public float CurrentStateCompleteValue { get; private set; }
 
-        /// <summary>
-        ///   当前状态的总需完成度
-        /// </summary>
+        /// <summary>当前状态的总需完成度</summary>
         public float CurrentStateTotalValue { get; private set; }
 
-        /// <summary>
-        /// 下载地址列表
-        /// </summary>
+        /// <summary>下载地址列表</summary>
         private List<string> url_group_;
 
-        /// <summary>
-        ///   可用的URL
-        /// </summary>
+        /// <summary>可用的URL</summary>
         private string current_url_;
 
-        /// <summary>
-        ///   资源包名
-        /// </summary>
+        /// <summary>资源包名</summary>
         private List<string> packages_name_;
 
-        /// <summary>
-        ///   
-        /// </summary>
         private URLVerifier verifier_;
 
-        /// <summary>
-        ///   资源下载器
-        /// </summary>
+        /// <summary>资源下载器</summary>
         private AssetBundleDownloader ab_download_;
 
-        /// <summary>
-        /// 
-        /// </summary>
-        protected PackageDownloader()
-        { }
+        protected PackageDownloader() { }
 
-        /// <summary>
-        ///   开始下载
-        /// </summary>
+        /// <summary>开始下载</summary>
         public bool StartDownload(List<string> url_group, List<string> pack_list)
         {
             if (!AssetBundleManager.Instance.IsReady)
@@ -131,8 +95,7 @@ namespace zcode.AssetBundlePacker
             return true;
         }
 
-        /// <summary>
-        ///   取消下载
+        /// <summary>取消下载
         /// </summary>
         public void CancelDownload()
         {
@@ -225,7 +188,7 @@ namespace zcode.AssetBundlePacker
 
             UpdateCompleteValue(0f, 0f);
 
-            if(packages_name_ == null)
+            if (packages_name_ == null)
             {
                 Error(emErrorCode.InvalidPackageName);
                 yield break;
@@ -305,16 +268,12 @@ namespace zcode.AssetBundlePacker
             OnUpdateEvent();
         }
 
-        /// <summary>
-        ///   更新完成度
-        /// </summary>
+        /// <summary>更新完成度</summary>
         void UpdateCompleteValue(float current)
         {
             UpdateCompleteValue(current, CurrentStateTotalValue);
         }
-        /// <summary>
-        ///   更新完成度
-        /// </summary>
+        /// <summary>更新完成度</summary>
         void UpdateCompleteValue(float current, float total)
         {
             CurrentStateCompleteValue = current;
@@ -322,27 +281,21 @@ namespace zcode.AssetBundlePacker
             OnUpdateEvent();
         }
 
-        /// <summary>
-        ///   更新
-        /// </summary>
+        /// <summary>更新</summary>
         void OnUpdateEvent()
         {
             if (OnUpdate != null)
                 OnUpdate(this);
         }
 
-        /// <summary>
-        ///   结束事件
-        /// </summary>
+        /// <summary>结束事件</summary>
         void OnDoneEvent()
         {
             if (OnDone != null)
                 OnDone(this);
         }
 
-        /// <summary>
-        ///   错误
-        /// </summary>
+        /// <summary>错误</summary>
         void Error(emErrorCode ec, string message = null)
         {
             ErrorCode = ec;

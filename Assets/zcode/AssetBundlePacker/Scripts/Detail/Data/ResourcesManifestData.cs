@@ -1,92 +1,52 @@
 ﻿/***************************************************************
- * Copyright 2016 By Zhang Minglin
- * Author: Zhang Minglin
- * Create: 2016/01/18
  * Note  : 资源描述数据
 ***************************************************************/
-using UnityEngine;
-using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 
-namespace zcode.AssetBundlePacker
+namespace GS.AssetBundlePacker
 {
-    /// <summary>
-    /// 资源清单
-    /// </summary>
+    /// <summary>资源清单</summary>
     public class ResourcesManifestData
     {
-        /// <summary>
-        ///   场景描述信息
-        /// </summary>
+        /// <summary>场景描述信息</summary>
         public class Scene
         {
-            /// <summary>
-            /// 场景名称
-            /// </summary>
+            /// <summary>场景名称</summary>
             public string SceneLevelName;
-            /// <summary>
-            /// 场景路径
-            /// </summary>
+            /// <summary>场景路径</summary>
             public string ScenePath;
-            /// <summary>
-            /// 场景配置文件路径
-            /// </summary>
+            /// <summary>场景配置文件路径</summary>
             public string SceneConfigPath;
         }
 
-        /// <summary>
-        ///   AssetBundle描述信息
-        /// </summary>
+        /// <summary>AssetBundle描述信息</summary>
         public class AssetBundle
         {
-            /// <summary>
-            /// AssetBundleName
-            /// </summary>
+            /// <summary>AssetBundleName</summary>
             public string AssetBundleName;
-            /// <summary>
-            /// 资源列表
-            /// </summary>
+            /// <summary>资源列表</summary>
             public List<string> Assets = new List<string>();
-            /// <summary>
-            /// 场景列表
-            /// </summary>
+            /// <summary>场景列表</summary>
             public List<string> Scenes = new List<string>();
-            /// <summary>
-            /// AssetBundle大小
-            /// </summary>
+            /// <summary>AssetBundle大小</summary>
             public long Size;
-            /// <summary>
-            /// 压缩包大小
-            /// </summary>
+            /// <summary>压缩包大小</summary>
             public long CompressSize;
-            /// <summary>
-            /// 是否压缩
-            /// </summary>
+            /// <summary>是否压缩</summary>
             public bool IsCompress = false;
-            /// <summary>
-            /// 是否打包到安装包中（是否作为原始资源）
-            /// </summary>
+            /// <summary>是否打包到安装包中（是否作为原始资源）</summary>
             public bool IsNative = false;
-            /// <summary>
-            /// 是否常驻内存
-            /// </summary>
+            /// <summary>是否常驻内存</summary>
             public bool IsPermanent = false;
-            /// <summary>
-            /// 是否启动时加载（此AssetBundle也是常驻内存）
-            /// </summary>
+            /// <summary>是否启动时加载（此AssetBundle也是常驻内存）</summary>
             public bool IsStartupLoad = false;
         }
 
-        // 版本号(弃用)
-        [System.Obsolete("Use ResourcesManifestData.strVersion")]
-        public int Version;
-        // 版本号
+        /// <summary>版本号</summary>
         public string strVersion;
-        // 是否打包所有AssetBundle至安装包
+        /// <summary>是否打包所有AssetBundle至安装包</summary>
         public bool IsAllNative;
-        // 是否所有AssetBundle都压缩
+        /// <summary>是否所有AssetBundle都压缩</summary>
         public bool IsAllCompress;
         //Key：AssetBundleName Value: Describe
         public Dictionary<string, AssetBundle> AssetBundles = new Dictionary<string, AssetBundle>();
@@ -96,9 +56,7 @@ namespace zcode.AssetBundlePacker
 
     public class ResourcesManifest
     {
-        /// <summary>
-        /// 
-        /// </summary>
+        /// <summary>资源清单</summary>
         public ResourcesManifestData Data;
 
         /// <summary>
@@ -115,17 +73,12 @@ namespace zcode.AssetBundlePacker
         /// </summary>
         public Dictionary<string, string> SceneTable;
 
-        /// <summary>
-        ///   
-        /// </summary>
         public ResourcesManifest()
         {
             Data = new ResourcesManifestData();
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
+
         public bool Load(string file_name)
         {
             bool result = SimpleJsonReader.ReadFromFile<ResourcesManifestData>(ref Data, file_name);
@@ -134,22 +87,17 @@ namespace zcode.AssetBundlePacker
             return result;
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
         public bool Save(string file_name)
         {
             return SimpleJsonWriter.WriteToFile(Data, file_name);
         }
 
-        /// <summary>
-        ///   组建数据，建立资源查询表
-        /// </summary>
+        /// <summary>组建数据，建立资源查询表</summary>
         private void Build()
         {
             AssetTable = new Dictionary<string, List<string>>();
             SceneTable = new Dictionary<string, string>();
-            if(Data.AssetBundles != null)
+            if (Data.AssetBundles != null)
             {
                 var itr = Data.AssetBundles.Values.GetEnumerator();
                 while (itr.MoveNext())
@@ -176,9 +124,7 @@ namespace zcode.AssetBundlePacker
             }
         }
 
-        /// <summary>
-        ///   找到一个AssetBundleDescribe
-        /// </summary>
+        /// <summary>找到一个AssetBundleDescribe</summary>
         public ResourcesManifestData.AssetBundle Find(string assetbundlename)
         {
             if (Data == null)
@@ -193,9 +139,7 @@ namespace zcode.AssetBundlePacker
             return Data.AssetBundles[assetbundlename];
         }
 
-        /// <summary>
-        ///   找到一个AssetBundleDescribe
-        /// </summary>
+        /// <summary>找到一个AssetBundleDescribe</summary>
         public ResourcesManifestData.Scene FindScene(string scene_name)
         {
             if (Data == null)
@@ -210,9 +154,7 @@ namespace zcode.AssetBundlePacker
             return Data.Scenes[scene_name];
         }
 
-        /// <summary>
-        ///   获得包含某个资源的所有AssetBundle
-        /// </summary>
+        /// <summary>获得包含某个资源的所有AssetBundle</summary>
         public string[] GetAllAssetBundleName(string asset)
         {
             if (AssetTable == null)
@@ -222,9 +164,7 @@ namespace zcode.AssetBundlePacker
             return AssetTable[asset].ToArray();
         }
 
-        /// <summary>
-        ///   获得场景的AssetBundleName
-        /// </summary>
+        /// <summary>获得场景的AssetBundleName</summary>
         public string GetAssetBundleNameByScene(string scene_path)
         {
             if (SceneTable == null)
@@ -234,9 +174,7 @@ namespace zcode.AssetBundlePacker
             return SceneTable[scene_path];
         }
 
-        /// <summary>
-        ///   获得场景的AssetBundleName
-        /// </summary>
+        /// <summary>获得场景的AssetBundleName</summary>
         public string GetAssetBundleNameBySceneLevelName(string scene_name)
         {
             ResourcesManifestData.Scene desc = FindScene(scene_name);
@@ -245,9 +183,7 @@ namespace zcode.AssetBundlePacker
             return GetAssetBundleNameByScene(desc.ScenePath);
         }
 
-        /// <summary>
-        ///   判断一个AssetBundle是否常驻内存资源（标记为常驻内存或者启动时加载）
-        /// </summary>
+        /// <summary>判断一个AssetBundle是否常驻内存资源（标记为常驻内存或者启动时加载）</summary>
         public bool IsPermanent(string assetbundlename)
         {
             if (Data.AssetBundles == null)
@@ -261,9 +197,7 @@ namespace zcode.AssetBundlePacker
             return false;
         }
 
-        /// <summary>
-        ///   获得AssetBundle的大小
-        /// </summary>
+        /// <summary>获得AssetBundle的大小</summary>
         public long GetAssetBundleSize(string assetbunlename)
         {
             ResourcesManifestData.AssetBundle desc = Find(assetbunlename);
@@ -273,9 +207,7 @@ namespace zcode.AssetBundlePacker
             return 0;
         }
 
-        /// <summary>
-        ///   获得AssetBundle的大小
-        /// </summary>
+        /// <summary>获得AssetBundle的大小</summary>
         public long GetAssetBundleCompressSize(string assetbunlename)
         {
             ResourcesManifestData.AssetBundle desc = Find(assetbunlename);

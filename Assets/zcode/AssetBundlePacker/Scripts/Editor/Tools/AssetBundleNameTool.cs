@@ -4,13 +4,11 @@
  * Create: 2016/01/18
  * Note  : AssetBundle命名工具
 ***************************************************************/
-using UnityEngine;
-using System.Collections;
-using System.Collections.Generic;
-using UnityEditor;
 using System.IO;
+using UnityEditor;
+using UnityEngine;
 
-namespace zcode.AssetBundlePacker
+namespace GS.AssetBundlePacker
 {
     public static class AssetBundleNameTool
     {

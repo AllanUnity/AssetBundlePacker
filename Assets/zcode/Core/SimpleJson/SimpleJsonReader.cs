@@ -1,22 +1,13 @@
-﻿/***************************************************************
- * Copyright 2016 By Zhang Minglin
- * Author: Zhang Minglin
- * Create: 2016/11/22
- * Note  : Json格式数据读取
-***************************************************************/
+﻿using System.IO;
 using UnityEngine;
-using System.Collections;
-using System.IO;
 
-namespace zcode
+namespace GS
 {
+    /// <summary>Json格式数据读取</summary>
     public static class SimpleJsonReader
     {
-        /// <summary>
-        /// 从文件读取
-        /// </summary>
-        public static bool ReadFromFile<T>(ref T data, string file_name)
-            where T : class
+        /// <summary>从文件读取</summary>
+        public static bool ReadFromFile<T>(ref T data, string file_name) where T : class
         {
             try
             {
@@ -37,11 +28,8 @@ namespace zcode
             return false;
         }
 
-        /// <summary>
-        /// 从字符串中读取
-        /// </summary>
-        public static bool ReadFromString<T>(ref T data, string str)
-            where T : class
+        /// <summary>从字符串中读取</summary>
+        public static bool ReadFromString<T>(ref T data, string str) where T : class
         {
             try
             {

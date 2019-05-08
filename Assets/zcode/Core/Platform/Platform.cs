@@ -1,10 +1,8 @@
 ﻿using UnityEngine;
 
-namespace zcode
+namespace GS
 {
-    /// <summary>
-    ///   平台相关
-    /// </summary>
+    /// <summary>平台相关</summary>
     public static class Platform
     {
 #if UNITY_EDITOR 

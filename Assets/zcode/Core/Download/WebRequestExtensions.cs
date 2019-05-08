@@ -1,16 +1,9 @@
-﻿/***************************************************************
- * Copyright 2016 By Zhang Minglin
- * Author: Zhang Minglin
- * Create: 2016/12/07
- * Note  : WebRequest扩展
-***************************************************************/
-using UnityEngine;
-using System;
+﻿using System;
 using System.Net;
-using System.Collections;
 
-namespace zcode
+namespace GS
 {
+    /// <summary>WebRequest扩展</summary>
     public static class WebRequestExtensions
     {
         public static WebResponse BetterEndGetResponse(this WebRequest request, IAsyncResult asyncResult)

@@ -1,22 +1,15 @@
-﻿/***************************************************************
- * Copyright 2016 By Zhang Minglin
- * Author: Zhang Minglin
- * Create: 2016/03/11
- * Note  : AssetBundle资源更新器, 用于游戏启动时自动更新游戏资源
-***************************************************************/
-using UnityEngine;
+﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
-namespace zcode.AssetBundlePacker
+namespace GS.AssetBundlePacker
 {
+    /// <summary>AssetBundle资源更新器, 用于游戏启动时自动更新游戏资源</summary>
     public class Updater : MonoBehaviour
     {
-        /// <summary>
-        ///   状态
-        /// </summary>
+        /// <summary>状态</summary>
         public enum emState
         {
             None,               // 无
@@ -35,12 +28,8 @@ namespace zcode.AssetBundlePacker
         }
 
 
-        /// <summary>
-        /// 各个状态所占进度比率
-        /// </summary>
-        /// <remarks>
-        /// {当前状态所占比率， 上个状态累计总比率}
-        /// </remarks>
+        /// <summary>各个状态所占进度比率</summary>
+        /// <remarks>{当前状态所占比率， 上个状态累计总比率}</remarks>
         static readonly float[,] STATE_PROGRESS_RATIO = new float[,]
         {
             { 0f, 0f},              // None
@@ -153,7 +142,7 @@ namespace zcode.AssetBundlePacker
             url_group_ = url_group;
             current_url_ = null;
 
-            if(AssetBundleManager.IsPlatformSupport)
+            if (AssetBundleManager.IsPlatformSupport)
             {
                 StopAllCoroutines();
                 StartCoroutine(Updating());
@@ -171,7 +160,7 @@ namespace zcode.AssetBundlePacker
         /// </summary>
         public bool RestartUpdate()
         {
-            if(!IsDone)
+            if (!IsDone)
             {
                 return false;
             }
@@ -318,7 +307,7 @@ namespace zcode.AssetBundlePacker
                 yield break;
 
             //下载主配置文件
-            for (int i = 0; i < Common.CONFIG_NAME_ARRAY.Length; ++i )
+            for (int i = 0; i < Common.CONFIG_NAME_ARRAY.Length; ++i)
             {
                 file_download_ = new FileDownload(current_url_
                                         , Common.UPDATER_CACHE_PATH
@@ -346,7 +335,7 @@ namespace zcode.AssetBundlePacker
                 file_download_ = null;
                 UpdateCompleteValue(i, Common.CONFIG_NAME_ARRAY.Length);
             }
-           
+
             yield return null;
         }
 
@@ -485,7 +474,7 @@ namespace zcode.AssetBundlePacker
                         break;
                     }
                 }
-                
+
             }
 
             // 拷贝失败则需要把本地配置文件删除
@@ -524,13 +513,13 @@ namespace zcode.AssetBundlePacker
                 //重启AssetBundleManager
                 AssetBundleManager.Instance.Relaunch();
                 var abMgr = AssetBundleManager.Instance;
-                while(!abMgr.WaitForLaunch())
+                while (!abMgr.WaitForLaunch())
                 {
                     yield return null;
                 }
-                if(abMgr.IsFailed)
+                if (abMgr.IsFailed)
                 {
-                    if (abMgr.ErrorCode == zcode.AssetBundlePacker.emErrorCode.DiskFull)
+                    if (abMgr.ErrorCode == emErrorCode.DiskFull)
                     {
                         Error(emErrorCode.DiskFull);
                     }
@@ -551,11 +540,11 @@ namespace zcode.AssetBundlePacker
             {
                 var src = Common.GetUpdaterCacheFileFullName(file);
                 var dest = Common.GetFileFullName(file);
-                if(!File.Exists(src))
+                if (!File.Exists(src))
                 {
                     return;
                 }
-                if(File.Exists(dest))
+                if (File.Exists(dest))
                 {
                     File.Delete(dest);
                 }

@@ -1,16 +1,6 @@
-﻿/***************************************************************
- * Copyright 2016 By Zhang Minglin
- * Author: Zhang Minglin
- * Create: 2016/04/15
- * Note  : 场景配置数据
-***************************************************************/
-using UnityEngine;
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.IO;
+﻿using System.Collections.Generic;
 
-namespace zcode.AssetBundlePacker
+namespace GS.AssetBundlePacker
 {
     /// <summary>
     /// 场景加载配置

@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace zcode.AssetBundlePacker
+namespace GS.AssetBundlePacker
 {
     /// <summary>加载方式</summary>
     public enum emLoadPattern

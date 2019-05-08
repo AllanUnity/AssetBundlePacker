@@ -1,14 +1,4 @@
-﻿/***************************************************************
- * Copyright 2016 By Zhang Minglin
- * Author: Zhang Minglin
- * Create: 2016/01/22
- * Note  : 文件下载器
-***************************************************************/
-using UnityEngine;
-using System.Collections;
-using System.Collections.Generic;
-
-namespace zcode
+﻿namespace GS
 {
     /// <summary>
     ///   文件下载器

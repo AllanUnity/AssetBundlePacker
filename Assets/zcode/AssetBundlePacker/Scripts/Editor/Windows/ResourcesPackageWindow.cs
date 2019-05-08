@@ -1,18 +1,10 @@
-/***************************************************************
- * Copyright 2016 By Zhang Minglin
- * Author: Zhang Minglin
- * Create: 2016/01/20
- * Note  : 资源包编辑窗口
-***************************************************************/
-using UnityEngine;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEditor;
-using System.IO;
-using System.Runtime.Serialization;
+using UnityEngine;
 
-namespace zcode.AssetBundlePacker
+namespace GS.AssetBundlePacker
 {
+    /// <summary>资源包编辑窗口</summary>
     public class ResourcesPackageWindow : EditorWindow
     {
         /// <summary>

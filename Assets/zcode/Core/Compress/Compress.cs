@@ -1,54 +1,35 @@
-﻿/***************************************************************
- * Copyright 2016 By Zhang Minglin
- * Author: Zhang Minglin
- * Create: 2016/11/30
- * Note  : 压缩逻辑
-***************************************************************/
-using UnityEngine;
+﻿using SevenZip.Compression.LZMA;
 using System;
-using System.Collections;
 using System.IO;
-using SevenZip.Compression.LZMA;
+using UnityEngine;
 
-namespace zcode
+namespace GS
 {
-    /// <summary>
-    /// 文件压缩逻辑
-    /// </summary>
+    /// <summary>文件压缩逻辑</summary>
     public static class Compress
     {
-        /// <summary>
-        /// 打包后的文件后缀名
-        /// </summary>
+        /// <summary>打包后的文件后缀名</summary>
         public const string EXTENSION = ".7z";
 
-        /// <summary>
-        /// 是否是压缩包
-        /// </summary>
+        /// <summary>是否是压缩包</summary>
         public static bool IsCompressFile(string file_name)
         {
             return file_name.Contains(EXTENSION);
         }
 
-        /// <summary>
-        /// 获得文件的压缩包名
-        /// </summary>
+        /// <summary>获得文件的压缩包名</summary>
         public static string GetCompressFileName(string file_name)
         {
             return file_name + EXTENSION;
         }
 
-        /// <summary>
-        /// 获得默认文件名
-        /// </summary>
+        /// <summary>获得默认文件名</summary>
         public static string GetDefaultFileName(string compress_file_name)
         {
             return compress_file_name.Replace(EXTENSION, "");
         }
 
-        /// <summary>
-        /// 压缩文件
-        /// </summary>
+        /// <summary>压缩文件</summary>
         public static bool CompressFile(string in_file, string out_file = null)
         {
             if (out_file == null)
@@ -57,9 +38,7 @@ namespace zcode
             return CompressFileLZMA(in_file, out_file);
         }
 
-        /// <summary>
-        /// 解压文件
-        /// </summary>
+        /// <summary>解压文件</summary>
         public static bool DecompressFile(string in_file, string out_file = null)
         {
             if (out_file == null)
@@ -68,9 +47,7 @@ namespace zcode
             return DecompressFileLZMA(in_file, out_file);
         }
 
-        /// <summary>
-        /// 使用LZMA算法压缩文件  
-        /// </summary>
+        /// <summary>使用LZMA算法压缩文件  </summary>
         static bool CompressFileLZMA(string inFile, string outFile)
         {
             try
@@ -94,7 +71,7 @@ namespace zcode
 
                 return true;
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 Debug.LogError(ex.Message);
             }
@@ -102,9 +79,7 @@ namespace zcode
             return false;
         }
 
-        /// <summary>
-        /// 使用LZMA算法解压文件  
-        /// </summary>
+        /// <summary>使用LZMA算法解压文件  </summary>
         static bool DecompressFileLZMA(string inFile, string outFile)
         {
             try
@@ -129,7 +104,7 @@ namespace zcode
                 output.Close();
                 input.Close();
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 Debug.LogError(ex.Message);
             }

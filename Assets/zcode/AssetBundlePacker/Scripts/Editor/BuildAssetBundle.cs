@@ -1,16 +1,12 @@
 ﻿/***************************************************************
- * Copyright 2016 By Zhang Minglin
- * Author: Zhang Minglin
- * Create: 2016/11/30
  * Note  : 打包AssetBundle
 ***************************************************************/
-using UnityEditor;
-using UnityEngine;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using UnityEditor;
+using UnityEngine;
 
-namespace zcode.AssetBundlePacker
+namespace GS.AssetBundlePacker
 {
     /// <summary>
     /// 
@@ -20,9 +16,7 @@ namespace zcode.AssetBundlePacker
         /// <summary>
         ///   打包AssetBundle
         /// </summary>
-        public static void BuildAllAssetBundlesToTarget(AssetBundleBuild build
-            , BuildTarget target
-            , BuildAssetBundleOptions options)
+        public static void BuildAllAssetBundlesToTarget(AssetBundleBuild build, BuildTarget target, BuildAssetBundleOptions options)
         {
             string manifest_file = EditorCommon.BUILD_PATH + "/" + Common.MAIN_MANIFEST_FILE_NAME;
             AssetBundleManifest old_manifest = Common.LoadMainManifestByPath(manifest_file);
@@ -60,13 +54,13 @@ namespace zcode.AssetBundlePacker
                 return false;
             if (resources_manifest.Data.AssetBundles == null)
                 return false;
-				
+
             // 通过记录新旧版本中压缩标记
             // 判定资源是否需要压缩、删除压缩包
             Dictionary<string, int> dic = new Dictionary<string, int>();
             int old_version_bit = 0x1;                      // 旧版本中压缩
             int new_version_bit = 0x2;                      // 新版本中压缩
-            if(old_resources_manifest.Data != null && old_resources_manifest.Data.AssetBundles != null)
+            if (old_resources_manifest.Data != null && old_resources_manifest.Data.AssetBundles != null)
             {
                 var itr = old_resources_manifest.Data.AssetBundles.GetEnumerator();
                 while (itr.MoveNext())
@@ -110,8 +104,8 @@ namespace zcode.AssetBundlePacker
 
                 string action;
                 string file_name = EditorCommon.BUILD_PATH + "/" + name;
-                if((mask & old_version_bit) > 0 
-                    && (mask & new_version_bit) == 0 )
+                if ((mask & old_version_bit) > 0
+                    && (mask & new_version_bit) == 0)
                 {
                     // 旧版本中存在，新版本不存在
                     // 删除压缩包
@@ -125,14 +119,14 @@ namespace zcode.AssetBundlePacker
 
                     action = "Delete Compress";
                 }
-                else if((mask & new_version_bit) > 0 )
+                else if ((mask & new_version_bit) > 0)
                 {
                     //新版本中存在，压缩文件
                     Compress.CompressFile(file_name);
 
                     //重写ResourcesManifest数据
                     var ab = resources_manifest.Data.AssetBundles[name];
-                    ab.CompressSize = zcode.FileHelper.GetFileSize(Compress.GetCompressFileName(file_name));
+                    ab.CompressSize = FileHelper.GetFileSize(Compress.GetCompressFileName(file_name));
 
                     action = "Compress";
                 }
@@ -161,8 +155,8 @@ namespace zcode.AssetBundlePacker
             string file = Common.RESOURCES_PACKAGE_FILE_NAME;
             string src_file_name = EditorCommon.BUILD_PATH + "/" + file;
             string dest_file_name = Common.INITIAL_PATH + "/" + file;
-            bool result = zcode.FileHelper.CopyFile(src_file_name, dest_file_name, true);
-            if(result)
+            bool result = FileHelper.CopyFile(src_file_name, dest_file_name, true);
+            if (result)
                 AssetDatabase.Refresh();
 
             return result;
@@ -185,8 +179,7 @@ namespace zcode.AssetBundlePacker
             if (!Directory.Exists(Common.INITIAL_PATH))
                 Directory.CreateDirectory(Common.INITIAL_PATH);
             else
-                zcode.FileHelper.DeleteAllChild(Common.INITIAL_PATH
-                    , FileAttributes.Hidden | FileAttributes.System);
+                FileHelper.DeleteAllChild(Common.INITIAL_PATH, FileAttributes.Hidden | FileAttributes.System);
 
             //拷贝所有配置文件
             for (int i = 0; i < Common.CONFIG_NAME_ARRAY.Length; ++i)
@@ -200,27 +193,26 @@ namespace zcode.AssetBundlePacker
                     EditorUtility.ClearProgressBar();
                     return false;
                 }
-                zcode.FileHelper.CopyFile(src_file_name, dest_file_name, true);
+                FileHelper.CopyFile(src_file_name, dest_file_name, true);
             }
-            
+
             //拷贝AssetBundle文件
-            if(resources_manifest.Data != null && resources_manifest.Data.AssetBundles != null)
+            if (resources_manifest.Data != null && resources_manifest.Data.AssetBundles != null)
             {
                 float current = 0f;
                 float total = resources_manifest.Data.AssetBundles.Count;
-            foreach (var desc in resources_manifest.Data.AssetBundles.Values)
-            {
-                current += 1f;
-
-                //过滤主AssetBundle文件
-                if (desc.AssetBundleName == Common.MAIN_MANIFEST_FILE_NAME)
-                    continue;
-
-                if (desc.IsNative)
+                foreach (var desc in resources_manifest.Data.AssetBundles.Values)
                 {
-                    zcode.FileHelper.CopyFile(EditorCommon.BUILD_PATH + "/" + desc.AssetBundleName
-                            , Common.INITIAL_PATH + "/" + desc.AssetBundleName, true);
-                }
+                    current += 1f;
+
+                    //过滤主AssetBundle文件
+                    if (desc.AssetBundleName == Common.MAIN_MANIFEST_FILE_NAME)
+                        continue;
+
+                    if (desc.IsNative)
+                    {
+                        FileHelper.CopyFile(EditorCommon.BUILD_PATH + "/" + desc.AssetBundleName, Common.INITIAL_PATH + "/" + desc.AssetBundleName, true);
+                    }
 
                     //更新进度条
                     if (ShowProgressBar("", "Copy " + desc.AssetBundleName, current / total))
@@ -252,7 +244,7 @@ namespace zcode.AssetBundlePacker
                 //读取主AssetBundle
                 ResourcesManifestData.AssetBundle desc = new ResourcesManifestData.AssetBundle();
                 desc.AssetBundleName = Common.MAIN_MANIFEST_FILE_NAME;
-                desc.Size = zcode.FileHelper.GetFileSize(root_dir + Common.MAIN_MANIFEST_FILE_NAME);
+                desc.Size = FileHelper.GetFileSize(root_dir + Common.MAIN_MANIFEST_FILE_NAME);
                 info.Data.AssetBundles.Add(Common.MAIN_MANIFEST_FILE_NAME, desc);
 
                 //读取其它AssetBundle
@@ -260,7 +252,7 @@ namespace zcode.AssetBundlePacker
                 {
                     desc = new ResourcesManifestData.AssetBundle();
                     desc.AssetBundleName = name;
-                    desc.Size = zcode.FileHelper.GetFileSize(root_dir + name);
+                    desc.Size = FileHelper.GetFileSize(root_dir + name);
                     AssetBundle ab = AssetBundle.LoadFromFile(root_dir + name);
                     foreach (var asset in ab.GetAllAssetNames())
                     {
@@ -303,28 +295,21 @@ namespace zcode.AssetBundlePacker
             }
 
             //同步数据至ResourcesManifestData
-            if(build != null)
-            {
+            if (build != null)
                 build.SyncConfigTo(info.Data);
-            }
 
             //保存ResourcesInfo
             string resources_manifest_file = EditorCommon.BUILD_PATH + "/" + Common.RESOURCES_MANIFEST_FILE_NAME;
             info.Save(resources_manifest_file);
 
             if (AssetBundleBrowseWindow.Instance != null)
-            {
                 AssetBundleBrowseWindow.Instance.LoadData(info);
-            }
 
             AssetDatabase.Refresh();
-
             return info;
         }
 
-        /// <summary>
-        /// 比对AssetBundleManifest, 删除冗余的AssetBundle
-        /// </summary>
+        /// <summary>比对AssetBundleManifest, 删除冗余的AssetBundle</summary>
         static void ComparisonAssetBundleManifest(AssetBundleManifest old_manifest
                                                 , AssetBundleManifest new_manifest)
         {
@@ -348,9 +333,6 @@ namespace zcode.AssetBundlePacker
             }
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
         static bool ShowProgressBar(string title, string operating, float progress)
         {
             return EditorUtility.DisplayCancelableProgressBar(title, operating, progress);

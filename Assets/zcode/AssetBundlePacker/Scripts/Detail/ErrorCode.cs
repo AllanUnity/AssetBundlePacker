@@ -1,45 +1,52 @@
-﻿/***************************************************************
- * Copyright 2016 By Zhang Minglin
- * Author: Zhang Minglin
- * Create: 2016/12/08
- * Note  : 错误代码定义
-***************************************************************/
-using UnityEngine;
-using System.Collections;
-
-namespace zcode.AssetBundlePacker
+﻿namespace GS.AssetBundlePacker
 {
-    /// <summary>
-    ///   错误代码
-    /// </summary>
+    /// <summary>错误代码</summary>
     public enum emErrorCode
     {
-        None = 0,                               // 无
-        ParameterError = 1,                     // 参数错误
-        TimeOut = 2,                            // 超时
-        PreprocessError = 3,                    // 预处理错误
-        DiskFull = 4,                           // 存储空间已满
-        WriteException = 5,                     // 写入异常
+        /// <summary>无</summary>
+        None = 0,
+        /// <summary>参数错误</summary>
+        ParameterError = 1,
+        /// <summary>超时</summary>
+        TimeOut = 2,
+        /// <summary>预处理错误</summary>
+        PreprocessError = 3,
+        /// <summary>存储空间已满</summary>
+        DiskFull = 4,
+        /// <summary>写入异常</summary>
+        WriteException = 5,
 
         //Load
-        LoadMainManifestFailed = 101,           // 载入AssetBundleManifest错误
-        LoadResourcesManifestFailed = 102,      // 载入ResourcesManifest错误
-        LoadResourcesPackagesFailed = 103,      // 载入ResourcesPackages错误
-        LoadNewMainManifestFailed = 104,        // 载入新的AssetBundleManifest错误
-        LoadNewResourcesManiFestFailed = 105,   // 载入新的ResourcesManifest错误
-        
+        /// <summary>载入AssetBundleManifest错误</summary>
+        LoadMainManifestFailed = 101,
+        /// <summary>载入ResourcesManifest错误</summary>
+        LoadResourcesManifestFailed = 102,
+        /// <summary>载入ResourcesPackages错误</summary>
+        LoadResourcesPackagesFailed = 103,
+        /// <summary>载入新的AssetBundleManifest错误</summary>
+        LoadNewMainManifestFailed = 104,
+        /// <summary>载入新的ResourcesManifest错误</summary>
+        LoadNewResourcesManiFestFailed = 105,
+
 
         //Find
-        NotFindAssetBundle = 201,                 // 未找到有效的AssetBundle
+        /// <summary>未找到有效的AssetBundle</summary>
+        NotFindAssetBundle = 201,
 
         //Download
-        InvalidURL = 1001,                      // 未能识别URL服务器
-        ServerNoResponse = 1002,                // 服务器未响应
-        DownloadFailed = 1003,                  // 下载失败
-        DownloadMainConfigFileFailed = 1004,    // 主配置文件下载失败
-        DownloadAssetBundleFailed = 1005,       // AssetBundle下载失败
+        /// <summary>未能识别URL服务器</summary>
+        InvalidURL = 1001,
+        /// <summary>服务器未响应</summary>
+        ServerNoResponse = 1002,
+        /// <summary>下载失败</summary>
+        DownloadFailed = 1003,
+        /// <summary>主配置文件下载失败</summary>
+        DownloadMainConfigFileFailed = 1004,
+        /// <summary>AssetBundle下载失败</summary>
+        DownloadAssetBundleFailed = 1005,
 
         //PackageDownloader
-        InvalidPackageName = 2001,              // 无效的包名
+        /// <summary>无效的包名</summary>
+        InvalidPackageName = 2001,      
     }
 }

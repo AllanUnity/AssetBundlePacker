@@ -1,18 +1,14 @@
-﻿/***************************************************************
-* Author: Zhang Minglin
-* Note  : IO错误代码定义
-***************************************************************/
-
-namespace zcode
+﻿namespace GS
 {
-    /// <summary>
-    /// IO操作代码
-    /// </summary>
+    /// <summary>IO操作代码</summary>
     public enum emIOOperateCode
     {
-        Succeed = 0,                // 成功
-        Fail = 1,                   // 失败
-        DiskFull = 2,               // 存储空间已满
+        /// <summary>成功</summary>
+        Succeed = 0,
+        /// <summary>失败</summary>
+        Fail = 1,
+        /// <summary>存储空间已满</summary>
+        DiskFull = 2,    
     }
 }
 

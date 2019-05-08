@@ -1,7 +1,7 @@
-﻿using UnityEditor;
-using UnityEngine;
+﻿using GS.AssetBundlePacker;
+using UnityEditor;
 
-namespace zcode.AssetBundlePacker
+namespace GS
 {
     /// <summary>AssetBundle相关菜单项</summary>
     public class AssetBundleMenu 

@@ -1,24 +1,13 @@
-﻿/***************************************************************
- * Copyright 2016 By Zhang Minglin
- * Author: Zhang Minglin
- * Create: 2016/11/22
- * Note  : Json格式数据写入
-***************************************************************/
-using UnityEngine;
-using System.Collections;
-using System.IO;
+﻿using System.IO;
 using System.Text;
+using UnityEngine;
 
-namespace zcode
+namespace GS
 {
-    /// <summary>
-    /// SimpleJson格式写入器
-    /// </summary>
+    /// <summary>SimpleJson格式写入器</summary>
     public static class SimpleJsonWriter
     {
-        /// <summary>
-        /// 写入至文件
-        /// </summary>
+        /// <summary>写入至文件</summary>
         public static bool WriteToFile(object json, string file_name)
         {
             try
@@ -42,9 +31,7 @@ namespace zcode
             return false;
         }
 
-        /// <summary>
-        /// 写入至字符串流
-        /// </summary>
+        /// <summary>写入至字符串流</summary>
         public static bool WriteToString(object json, out string str)
         {
             str = null;

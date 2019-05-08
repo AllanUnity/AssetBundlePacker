@@ -3,7 +3,7 @@ using System.Collections;
 using System.IO;
 using UnityEngine;
 
-namespace zcode
+namespace GS
 {
     /// <summary>文件常用操作</summary>
     public static class FileHelper
@@ -260,7 +260,7 @@ namespace zcode
                     else
                     {
                         if (w.isDone && w.bytes.Length > 0)
-                            zcode.FileHelper.WriteBytesToFile(dest, w.bytes, w.bytes.Length);
+                            FileHelper.WriteBytesToFile(dest, w.bytes, w.bytes.Length);
 
                         is_done = true;
                     }

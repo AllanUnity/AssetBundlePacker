@@ -4,7 +4,7 @@ using System.IO;
 using UnityEditor;
 using UnityEngine;
 
-namespace zcode.AssetBundlePacker
+namespace GS.AssetBundlePacker
 {
     /// <summary>AssetBundle打包配置窗口</summary>
     public class AssetBundleBuildWindow : EditorWindow

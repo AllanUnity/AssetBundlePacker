@@ -1,87 +1,58 @@
 ﻿/***************************************************************
- * Copyright 2016 By Zhang Minglin
- * Author: Zhang Minglin
- * Create: 2016/01/22
  * Note  : Http下载(支持断点续传, 暂不支持多线程下载)
 ***************************************************************/
-using UnityEngine;
 using System;
-using System.Collections;
-using System.Threading;
-using System.Net;
 using System.IO;
+using System.Net;
+using System.Threading;
+using UnityEngine;
 
-namespace zcode
+namespace GS
 {
-    /// <summary>
-    ///   下载内容
-    /// </summary>
+    /// <summary>下载内容</summary>
     internal class DownloadContent
     {
-        /// <summary>
-        /// 状态
-        /// </summary>
+        /// <summary>状态</summary>
         public enum emState
         {
-            Downloading,        // 正在下载
-            Canceling,          // 正在取消
-            Completed,          // 已完成
-            Failed,             // 已失败
+            /// <summary>Downloading</summary>
+            Downloading,
+            /// <summary>正在取消</summary>
+            Canceling,
+            /// <summary>已完成</summary>
+            Completed,
+            /// <summary>已失败</summary>
+            Failed,
         }
 
-        /// <summary>
-        /// 下载文件缓存的Last-Modified字符串大小
-        /// </summary>
+        /// <summary>下载文件缓存的Last-Modified字符串大小</summary>
         public const int FILE_LAST_MODIFIED_SIZE = 32;
 
-        /// <summary>
-        ///   缓存大小
-        /// </summary>
+        /// <summary>缓存大小</summary>
         public const int BUFFER_SIZE = 1024;
 
-        /// <summary>
-        ///   下载中间文件名
-        /// </summary>
+        /// <summary>下载中间文件名</summary>
         public const string TEMP_EXTENSION_NAME = ".download";
 
-        /// <summary>
-        /// 当前状态
-        /// </summary>
+        /// <summary>当前状态</summary>
         public emState State;
 
-        /// <summary>
-        ///   文件名
-        /// </summary>
+        /// <summary>文件名</summary>
         public string FileFullName;
 
-        /// <summary>
-        ///   上次已下载的大小
-        /// </summary>
+        /// <summary>上次已下载的大小</summary>
         public long LastTimeCompletedLength;
 
-        /// <summary>
-        ///   数据缓存
-        /// </summary>
+        /// <summary>数据缓存</summary>
         public byte[] Buffer;
 
-        /// <summary>
-        /// 
-        /// </summary>
         public DateTime LastModified;
 
-        /// <summary>
-        ///   
-        /// </summary>
         public FileStream FS;
 
-        /// <summary>
-        /// 返回的数据流
-        /// </summary>
+        /// <summary>返回的数据流</summary>
         public Stream ResponseStream { get; private set; }
 
-        /// <summary>
-        ///   
-        /// </summary>
         private HttpWebResponse web_response_;
         public HttpWebResponse WebResponse
         {
@@ -96,20 +67,9 @@ namespace zcode
             }
         }
 
-        /// <summary>
-        ///   临时文件名（用于下载时写入数据）
-        /// </summary>
-        public string TempFileFullName
-        {
-            get
-            {
-                return FileFullName + TEMP_EXTENSION_NAME;
-            }
-        }
+        /// <summary>临时文件名（用于下载时写入数据）</summary>
+        public string TempFileFullName { get { return FileFullName + TEMP_EXTENSION_NAME; } }
 
-        /// <summary>
-        ///   
-        /// </summary>
         public DownloadContent(string file_name, bool is_new = true)
         {
             FileFullName = file_name;
@@ -119,9 +79,7 @@ namespace zcode
             OpenFile(is_new);
         }
 
-        /// <summary>
-        ///   关闭
-        /// </summary>
+        /// <summary>关闭</summary>
         public void Close()
         {
             if (web_response_ != null)
@@ -142,9 +100,7 @@ namespace zcode
             }
         }
 
-        /// <summary>
-        /// 打开文件
-        /// </summary>
+        /// <summary>打开文件</summary>
         void OpenFile(bool is_new)
         {
             try
@@ -194,9 +150,7 @@ namespace zcode
             }
         }
 
-        /// <summary>
-        /// 关闭文件
-        /// </summary>
+        /// <summary>关闭文件</summary>
         void CloseFile()
         {
             if (FS != null)
@@ -204,7 +158,7 @@ namespace zcode
                 FS.Close();
                 FS = null;
             }
-            
+
             if (File.Exists(TempFileFullName))
             {
                 if (State == emState.Completed)
@@ -222,12 +176,10 @@ namespace zcode
             }
         }
 
-        /// <summary>
-        /// 关闭文件,写入Last-Modified
-        /// </summary>
+        /// <summary>关闭文件,写入Last-Modified</summary>
         void CloseFile(DateTime last_modified)
         {
-            if (State == emState.Failed) 
+            if (State == emState.Failed)
                 WriteLastModified(last_modified);
 
             if (FS != null)
@@ -248,12 +200,10 @@ namespace zcode
             }
         }
 
-        /// <summary>
-        /// 写入Last-Modified
-        /// </summary>
+        /// <summary>写入Last-Modified</summary>
         bool WriteLastModified(DateTime last_modified)
         {
-            if (FS != null )
+            if (FS != null)
             {
                 //写入Last-Modified
                 string str = last_modified.Ticks.ToString("d" + FILE_LAST_MODIFIED_SIZE);
@@ -266,9 +216,7 @@ namespace zcode
             return false;
         }
 
-        /// <summary>
-        /// 读取Last-Modified
-        /// </summary>
+        /// <summary>读取Last-Modified</summary>
         bool ReadLastModified(ref DateTime last_modified)
         {
             try
@@ -287,126 +235,83 @@ namespace zcode
             {
                 Debug.LogWarningFormat("ReadLastModified() -  FALIED! {0}\nEx:{1}\nStackTrace:{2}", FileFullName, ex.Message, ex.StackTrace);
             }
-            
+
             return false;
         }
     }
 
-    /// <summary>
-    ///   Http下载
-    /// </summary>
+    /// <summary>Http下载</summary>
     public class HttpAsyDownload
     {
-        /// <summary>
-        ///   错误代码
-        /// </summary>
+        /// <summary>错误代码</summary>
         public enum emErrorCode
         {
-            None,           // 无
-            Cancel,         // 取消下载
-            NoResponse,     // 服务器未响应
-            DownloadError,  // 下载出错
-            TimeOut,        // 超时
-            Abort,          // 强制关闭
-            DiskFull,       // 存储空间不足
+            /// <summary>无</summary>
+            None,
+            /// <summary>取消下载</summary>
+            Cancel,
+            /// <summary>服务器未响应</summary>
+            NoResponse,
+            /// <summary>下载出错</summary>
+            DownloadError,
+            /// <summary>超时</summary>
+            TimeOut,
+            /// <summary>强制关闭</summary>
+            Abort,
+            /// <summary>存储空间不足</summary>
+            DiskFull,
         }
 
-        /// <summary>
-        ///   超时时间(毫秒)
-        /// </summary>
+        /// <summary>超时时间(毫秒)</summary>
         public const int TIMEOUT_TIME = 20000;
 
-        /// <summary>
-        ///   下载地址
-        /// </summary>
+        /// <summary>下载地址</summary>
         public string URL { get; private set; }
 
-        /// <summary>
-        ///   存放的根路径
-        /// </summary>
+        /// <summary>存放的根路径</summary>
         public string Root { get; private set; }
 
-        /// <summary>
-        ///   LocalName
-        /// </summary>
+        /// <summary>LocalName</summary>
         public string LocalName { get; private set; }
 
-        /// <summary>
-        /// FullName
-        /// </summary>
-        public string FullName
-        {
-            get { return string.IsNullOrEmpty(Root) || string.IsNullOrEmpty(LocalName) ?
-                null : Root  + "/" + LocalName; }
-        }
+        /// <summary>FullName</summary>
+        public string FullName { get { return string.IsNullOrEmpty(Root) || string.IsNullOrEmpty(LocalName) ? null : Root + "/" + LocalName; } }
 
-        /// <summary>
-        ///   是否结束
-        /// </summary>
+        /// <summary>是否结束</summary>
         public bool IsDone { get; private set; }
 
-        /// <summary>
-        ///   是否出错
-        /// </summary>
-        public bool IsFailed
-        {
-            get { return ErrorCode != emErrorCode.None; }
-        }
+        /// <summary>是否出错</summary>
+        public bool IsFailed { get { return ErrorCode != emErrorCode.None; } }
 
-        /// <summary>
-        ///   错误代码
-        /// </summary>
+        /// <summary>错误代码</summary>
         public emErrorCode ErrorCode;
 
-        /// <summary>
-        /// 总下载大小
-        /// </summary>
+        /// <summary>总下载大小</summary>
         public long Length { get; private set; }
 
-        /// <summary>
-        /// 获得当前已下载大小
-        /// </summary>
+        /// <summary>获得当前已下载大小</summary>
         public long CompletedLength { get; private set; }
 
-        /// <summary>
-        ///   下载通知回调
-        /// </summary>
+        /// <summary>下载通知回调</summary>
         private Action<HttpAsyDownload, long> notify_callback_;
 
-        /// <summary>
-        ///   错误回调
-        /// </summary>
+        /// <summary>错误回调</summary>
         private Action<HttpAsyDownload> error_callback_;
 
-        /// <summary>
-        ///   
-        /// </summary>
         private DownloadContent content_ = null;
 
-        /// <summary>
-        ///   
-        /// </summary>
         private HttpWebRequest http_request_ = null;
 
-        /// <summary>
-        ///   锁对象，用于保证线程安全
-        /// </summary>
+        /// <summary>锁对象，用于保证线程安全</summary>
         readonly object lock_obj_ = new object();
 
-        /// <summary>
-        ///   
-        /// </summary>
         public HttpAsyDownload(string url)
         {
             URL = url;
         }
 
-        /// <summary>
-        ///   开始下载
-        /// </summary>
-        public void Start(string root, string local_file_name
-                        , Action<HttpAsyDownload, long> notify = null
-                        , Action<HttpAsyDownload> error_cb = null)
+        /// <summary>开始下载</summary>
+        public void Start(string root, string local_file_name, Action<HttpAsyDownload, long> notify = null, Action<HttpAsyDownload> error_cb = null)
         {
             lock (lock_obj_)
             {
@@ -425,9 +330,7 @@ namespace zcode
             }
         }
 
-        /// <summary>
-        ///   取消下载（优雅的）
-        /// </summary>
+        /// <summary>取消下载（优雅的）</summary>
         public void Cancel()
         {
             lock (lock_obj_)
@@ -443,9 +346,7 @@ namespace zcode
             }
         }
 
-        /// <summary>
-        ///   中止下载
-        /// </summary>
+        /// <summary>中止下载</summary>
         public void Abort()
         {
             lock (lock_obj_)
@@ -457,9 +358,7 @@ namespace zcode
             }
         }
 
-        /// <summary>
-        ///   下载完成
-        /// </summary>
+        /// <summary>下载完成</summary>
         void OnFinish()
         {
             if (content_ != null)
@@ -478,9 +377,7 @@ namespace zcode
             IsDone = true;
         }
 
-        /// <summary>
-        ///   下载失败
-        /// </summary>
+        /// <summary>下载失败</summary>
         void Error(emErrorCode code)
         {
             if (content_ != null)
@@ -503,9 +400,7 @@ namespace zcode
                 error_callback_(this);
         }
 
-        /// <summary>
-        /// 下载
-        /// </summary>
+        /// <summary>下载</summary>
         void _Download()
         {
             try
@@ -530,9 +425,6 @@ namespace zcode
             }
         }
 
-        /// <summary>
-        ///   
-        /// </summary>
         void _OnResponseCallback(IAsyncResult ar)
         {
             try
@@ -575,18 +467,14 @@ namespace zcode
                     }
                 }
             }
-            catch (System.Exception e)
+            catch (Exception e)
             {
-                Debug.LogWarning("HttpAsyDownload - \"" + LocalName + "\" download failed!"
-                                    + "\nMessage:" + e.Message
-                                    + "\nStrace:" + e.StackTrace);
+                Debug.LogWarning("HttpAsyDownload - \"" + LocalName + "\" download failed!" + "\nMessage:" + e.Message + "\nStrace:" + e.StackTrace);
                 Error(emErrorCode.DownloadError);
             }
         }
 
-        /// <summary>
-        ///   断点续传
-        /// </summary>
+        /// <summary>断点续传</summary>
         void _PartialDownload()
         {
             try
@@ -611,9 +499,6 @@ namespace zcode
             }
         }
 
-        /// <summary>
-        ///   
-        /// </summary>
         void _OnDownloadPartialResponseCallback(IAsyncResult ar)
         {
             try
@@ -646,27 +531,18 @@ namespace zcode
             }
             catch (System.Exception e)
             {
-                Debug.LogWarning("HttpAsyDownload - \"" + LocalName + "\" download failed!"
-                                    + "\nMessage:" + e.Message
-                                    + "\nStrace:" + e.StackTrace);
+                Debug.LogWarning("HttpAsyDownload - \"" + LocalName + "\" download failed!" + "\nMessage:" + e.Message + "\nStrace:" + e.StackTrace);
                 Error(emErrorCode.DownloadError);
             }
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
         public IAsyncResult _BeginRead(AsyncCallback callback)
         {
             if (content_ == null)
-            {
                 return null;
-            }
 
             if (IsFailed)
-            {
                 return null;
-            }
 
             if (content_.State == DownloadContent.emState.Canceling)
             {
@@ -674,16 +550,9 @@ namespace zcode
                 return null;
             }
 
-            return content_.ResponseStream.BeginRead(content_.Buffer
-                , 0
-                , DownloadContent.BUFFER_SIZE
-                , callback
-                , content_);
+            return content_.ResponseStream.BeginRead(content_.Buffer, 0, DownloadContent.BUFFER_SIZE, callback, content_);
         }
 
-        /// <summary>
-        ///   
-        /// </summary>
         void _OnReadCallback(IAsyncResult ar)
         {
             try
@@ -711,73 +580,46 @@ namespace zcode
                         notify_callback_(this, (long)read);
                 }
             }
-            catch(IOException e)
+            catch (IOException e)
             {
-                Debug.LogWarning("HttpAsyDownload - \"" + LocalName + "\" download failed!"
-                                    + "\nMessage:" + e.Message
-                                    + "\nStrace:" + e.StackTrace);
+                Debug.LogWarning("HttpAsyDownload - \"" + LocalName + "\" download failed!" + "\nMessage:" + e.Message + "\nStrace:" + e.StackTrace);
                 Error(emErrorCode.DiskFull);
             }
             catch (WebException e)
             {
-                Debug.LogWarning("HttpAsyDownload - \"" + LocalName + "\" download failed!"
-                                    + "\nMessage:" + e.Message
-                                    + "\nStrace:" + e.StackTrace);
+                Debug.LogWarning("HttpAsyDownload - \"" + LocalName + "\" download failed!" + "\nMessage:" + e.Message + "\nStrace:" + e.StackTrace);
                 Error(emErrorCode.DownloadError);
             }
             catch (System.Exception e)
             {
-                Debug.LogWarning("HttpAsyDownload - \"" + LocalName + "\" download failed!"
-                                    + "\nMessage:" + e.Message
-                                    + "\nStrace:" + e.StackTrace);
+                Debug.LogWarning("HttpAsyDownload - \"" + LocalName + "\" download failed!" + "\nMessage:" + e.Message + "\nStrace:" + e.StackTrace);
                 Error(emErrorCode.DownloadError);
             }
         }
 
         #region Timeout
-        /// <summary>
-        /// 
-        /// </summary>
         RegisteredWaitHandle registered_wait_handle_;
 
-        /// <summary>
-        /// 
-        /// </summary>
         WaitHandle wait_handle_;
 
-        /// <summary>
-        /// 
-        /// </summary>
         void RegisterTimeOut(WaitHandle handle)
         {
             wait_handle_ = handle;
-            registered_wait_handle_ = ThreadPool.RegisterWaitForSingleObject(handle
-                                                 , new WaitOrTimerCallback(_OnTimeoutCallback)
-                                                 , http_request_
-                                                 , TIMEOUT_TIME
-                                                 , true);
+            registered_wait_handle_ = ThreadPool.RegisterWaitForSingleObject(handle, new WaitOrTimerCallback(_OnTimeoutCallback), http_request_, TIMEOUT_TIME, true);
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
         void UnregisterTimeOut()
         {
             if (registered_wait_handle_ != null && wait_handle_ != null)
                 registered_wait_handle_.Unregister(wait_handle_);
         }
 
-        /// <summary>
-        ///   
-        /// </summary>
         void _OnTimeoutCallback(object state, bool timedOut)
         {
             lock (lock_obj_)
             {
                 if (timedOut)
-                {
                     Error(emErrorCode.TimeOut);
-                }
 
                 UnregisterTimeOut();
             }

@@ -1,15 +1,9 @@
-﻿/***************************************************************
- * Copyright 2016 By Zhang Minglin
- * Author: Zhang Minglin
- * Create: 2016/01/20
- * Note  : GUI辅助绘制函数
-***************************************************************/
+﻿using UnityEditor;
 using UnityEngine;
-using System.Collections;
-using UnityEditor;
 
-namespace zcode.AssetBundlePacker
+namespace GS.AssetBundlePacker
 {
+    /// <summary>GUI辅助绘制函数</summary>
     public class GUILayoutHelper
     {
         /// <summary>

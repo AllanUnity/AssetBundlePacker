@@ -1,13 +1,10 @@
 ﻿/***************************************************************
- * Copyright 2016 By Zhang Minglin
- * Author: Zhang Minglin
- * Create: 2016/01/18
  * Note  : AssetBundle编辑器环境下相关定义
 ***************************************************************/
 using UnityEngine;
 using System.IO;
 
-namespace zcode.AssetBundlePacker
+namespace GS.AssetBundlePacker
 {
     /// <summary>
     ///   AssetBundle打包策略

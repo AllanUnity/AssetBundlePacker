@@ -1,23 +1,13 @@
-﻿/***************************************************************
- * Copyright 2016 By Zhang Minglin
- * Author: Zhang Minglin
- * Create: 2015/11/26
- * Note  : 协同执行器
-***************************************************************/
-using UnityEngine;
+﻿using GS.AssetBundlePacker;
 using System.Collections;
-using UnityEngine.SceneManagement;
+using UnityEngine;
 
-namespace zcode
+namespace GS
 {
-    /// <summary>
-    ///   协同执行器
-    /// </summary>
+    /// <summary>协同执行器</summary>
     public class CoroutineExecutor : MonoBehaviour
     {
-        /// <summary>
-        ///   回调函数
-        /// </summary>
+        /// <summary>回调函数</summary>
         public System.Action DoneCallback;
 
         // Use this for initialization
@@ -27,9 +17,7 @@ namespace zcode
             DontDestroyOnLoad(transform.gameObject);
         }
 
-        /// <summary>
-        ///   执行
-        /// </summary>
+        /// <summary>执行</summary>
         void Do(AsyncOperation ao, System.Action callback)
         {
             DoneCallback = callback;
@@ -50,9 +38,7 @@ namespace zcode
             Destroy(this.gameObject);
         }
 
-        /// <summary>
-        ///   执行
-        /// </summary>
+        /// <summary>执行</summary>
         void Do(IEnumerator routine, System.Action callback)
         {
             DoneCallback = callback;
@@ -71,15 +57,13 @@ namespace zcode
             Destroy(this.gameObject);
         }
 
-        /// <summary>
-        ///   执行
-        /// </summary>
-        void Do(zcode.AssetBundlePacker.SceneLoadRequest req, System.Action callback)
+        /// <summary>执行</summary>
+        void Do(SceneLoadRequest req, System.Action callback)
         {
             DoneCallback = callback;
             StartCoroutine(_WaitForDone(req));
         }
-        IEnumerator _WaitForDone(zcode.AssetBundlePacker.SceneLoadRequest req)
+        IEnumerator _WaitForDone(SceneLoadRequest req)
         {
             if (req != null)
             {
@@ -93,9 +77,6 @@ namespace zcode
             Destroy(this.gameObject);
         }
 
-        /// <summary>
-        ///   
-        /// </summary>
         public static void Create(AsyncOperation ao, System.Action callback)
         {
             GameObject go = new GameObject();
@@ -106,9 +87,6 @@ namespace zcode
             }
         }
 
-        /// <summary>
-        ///   
-        /// </summary>
         public static void Create(IEnumerator routine, System.Action callback)
         {
             GameObject go = new GameObject();
@@ -119,10 +97,7 @@ namespace zcode
             }
         }
 
-        /// <summary>
-        ///   
-        /// </summary>
-        public static void Create(zcode.AssetBundlePacker.SceneLoadRequest req, System.Action callback)
+        public static void Create(SceneLoadRequest req, System.Action callback)
         {
             GameObject go = new GameObject();
             CoroutineExecutor executor = go.AddComponent<CoroutineExecutor>();

@@ -1,16 +1,10 @@
-/***************************************************************
- * Copyright 2016 By Zhang Minglin
- * Author: Zhang Minglin
- * Create: 2016/01/20
- * Note  : AssetBundle管理窗口
-***************************************************************/
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
-using System.Collections;
-using System.Collections.Generic;
 
-namespace zcode.AssetBundlePacker
+namespace GS.AssetBundlePacker
 {
+    /// <summary>AssetBundle管理窗口</summary>
     public class AssetBundleBrowseWindow : EditorWindow
     {
         /// <summary>
