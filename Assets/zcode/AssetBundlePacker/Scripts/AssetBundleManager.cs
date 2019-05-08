@@ -1,98 +1,56 @@
-﻿/***************************************************************
- * Copyright 2016 By Zhang Minglin
- * Author: Zhang Minglin
- * Create: 2016/01/18
- * Note  : AssetBundle资源管理
- *         负责游戏中的AssetBundle资源加载
-***************************************************************/
-using UnityEngine;
-using UnityEngine.SceneManagement;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace zcode.AssetBundlePacker
 {
-    /// <summary>
-    ///   资源管理器
-    /// </summary>
+    /// <summary>资源管理器--- 负责游戏中的AssetBundle资源加载</summary>
     public class AssetBundleManager : MonoSingleton<AssetBundleManager>
     {
 #if UNITY_EDITOR
-        /// <summary>
-        /// 当前平台是否支持AssetBundle
-        /// </summary>
+        /// <summary>当前平台是否支持AssetBundle</summary>
         public static readonly bool IsPlatformSupport = true;
 #elif UNITY_STANDALONE_WIN
-        /// <summary>
-        /// 当前平台是否支持AssetBundle
-        /// </summary>
+        /// <summary>当前平台是否支持AssetBundle</summary>
         public static readonly bool IsPlatformSupport = true; 
 #elif UNITY_IPHONE
-        /// <summary>
-        /// 当前平台是否支持AssetBundle
-        /// </summary>
+        /// <summary>当前平台是否支持AssetBundle</summary>
         public static readonly bool IsPlatformSupport = true; 
 #elif UNITY_ANDROID
-        /// <summary>
-        /// 当前平台是否支持AssetBundle
-        /// </summary>
+        /// <summary>当前平台是否支持AssetBundle</summary>
         public static readonly bool IsPlatformSupport = true; 
 #endif
 
-        /// <summary>
-        ///   最新的资源版本(已弃用)
-        /// </summary>
-        [System.Obsolete("Use AssetBundleManager.strVersion")]
-        public int Version;
-
-        /// <summary>
-        ///   最新的资源版本
-        /// </summary>
+        /// <summary>最新的资源版本</summary>
         public string strVersion;
 
-        /// <summary>
-        ///   是否准备完成
-        /// </summary>
+        /// <summary>是否准备完成</summary>
         public bool IsReady { get; private set; }
 
-        /// <summary>
-        ///   是否出错
-        /// </summary>
-        public bool IsFailed
-        {
-            get { return ErrorCode != emErrorCode.None; }
-        }
+        /// <summary>是否出错</summary>
+        public bool IsFailed { get { return ErrorCode != emErrorCode.None; } }
 
         /// <summary>
         /// 
         /// </summary>
         public emErrorCode ErrorCode { get; private set; }
 
-        /// <summary>
-        ///   主AssetBundleMainfest
-        /// </summary>
+        /// <summary>主AssetBundleMainfest</summary>
         public AssetBundleManifest MainManifest { get; private set; }
 
-        /// <summary>
-        ///   资源描述数据
-        /// </summary>
+        /// <summary>资源描述数据</summary>
         public ResourcesManifest ResManifest { get; private set; }
 
-        /// <summary>
-        ///   资源包数据
-        /// </summary>
+        /// <summary>资源包数据</summary>
         public ResourcesPackages ResPackages { get; private set; }
 
-        /// <summary>
-        ///   常驻的AssetBundle
-        /// </summary>
+        /// <summary>常驻的AssetBundle</summary>
         private Dictionary<string, AssetBundle> assetbundle_permanent_;
 
-        /// <summary>
-        ///   缓存的AssetBundle
-        /// </summary>
+        /// <summary>缓存的AssetBundle</summary>
         private Dictionary<string, Cache> assetbundle_cache_;
 
         /// <summary>
@@ -102,20 +60,12 @@ namespace zcode.AssetBundlePacker
         /// </summary>
         private Dictionary<string, AssetDependCache> asset_dependency_cache_;
 
-        /// <summary>
-        /// 正在异步载入的AssetBundle
-        /// </summary>
+        /// <summary>正在异步载入的AssetBundle</summary>
         private HashSet<string> assetbundle_async_loading_;
 
-        /// <summary>
-        /// 
-        /// </summary>
-        protected AssetBundleManager()
-        { }
+        protected AssetBundleManager() { }
 
-        /// <summary>
-        /// 重启
-        /// </summary>
+        /// <summary>重启</summary>
         public bool Relaunch()
         {
             //必须处于启动状态或者异常才可以重启
@@ -128,33 +78,25 @@ namespace zcode.AssetBundlePacker
             return true;
         }
 
-        /// <summary>
-        /// 等待启动完毕，启动完毕返回True,
-        /// </summary>
+        /// <summary>等待启动完毕，启动完毕返回True,</summary>
         public bool WaitForLaunch()
         {
+            Debug.Log("WaitForLaunch");
             if (IsReady)
                 return true;
 
             return false;
         }
 
-        /// <summary>
-        ///   加载一个资源
-        /// </summary>
-        public T LoadAsset<T>(string asset, bool unload_assetbundle = true)
-                where T : Object
+        /// <summary>加载一个资源</summary>
+        public T LoadAsset<T>(string asset, bool unload_assetbundle = true) where T : Object
         {
             try
             {
-                if(!IsPlatformSupport)
-                {
+                if (!IsPlatformSupport)
                     return null;
-                }
                 if (!IsReady || IsFailed)
-                {
                     return null;
-                }
 
                 asset = asset.ToLower();
 
@@ -180,7 +122,7 @@ namespace zcode.AssetBundlePacker
 
                 // 加载依赖
                 string[] deps = LoadDependenciesAssetBundle(assetbundlename);
-                
+
                 // 加载AssetBundle
                 var ab = LoadAssetBundle(assetbundlename);
                 // 加载资源
@@ -206,21 +148,15 @@ namespace zcode.AssetBundlePacker
             return null;
         }
 
-        /// <summary>
-        ///   异步加载一个资源
-        /// </summary>
+        /// <summary>异步加载一个资源</summary>
         public AssetLoadRequest LoadAssetAsync(string asset, bool unload_assetbundle = true)
         {
             try
             {
                 if (!IsPlatformSupport)
-                {
                     return null;
-                }
                 if (!IsReady || IsFailed)
-                {
                     return null;
-                }
 
                 /// 转小写
                 string assetName = asset.ToLower();
@@ -257,9 +193,7 @@ namespace zcode.AssetBundlePacker
             return null;
         }
 
-        /// <summary>
-        /// 卸载一个资源
-        /// </summary>
+        /// <summary>卸载一个资源</summary>
         public void UnloadAsset(string asset)
         {
             asset = asset.ToLower();
@@ -284,9 +218,7 @@ namespace zcode.AssetBundlePacker
             }
         }
 
-        /// <summary>
-        /// 卸载一个AssetBundle
-        /// </summary>
+        /// <summary>卸载一个AssetBundle</summary>
         public void UnloadAssetBundle(string assetbundleName, bool unload_all_dependencies_ab, bool unload_all_loaded_objects)
         {
             //卸载AssetBundle
@@ -309,7 +241,7 @@ namespace zcode.AssetBundlePacker
                 }
             }
             //卸载依赖的AssetBundle
-            if(is_unload && unload_all_dependencies_ab)
+            if (is_unload && unload_all_dependencies_ab)
             {
                 string[] deps = MainManifest.GetAllDependencies(assetbundleName);
                 for (int i = 0; i < deps.Length; ++i)
@@ -333,31 +265,13 @@ namespace zcode.AssetBundlePacker
             }
         }
 
-        /// <summary>
-        ///   加载场景
-        /// </summary>
-        [System.Obsolete("Use AssetBundleManager.LoadSceneAsync, Because this function has bug!(UnityEngine.SceneManagement.SceneManager.LoadScene is not synchronization completed! )")]
-        public bool LoadScene(string scene_name
-                                , LoadSceneMode mode = LoadSceneMode.Single
-                                , bool unload_assetbundle = true
-                                , bool unload_all_loaded_objects = false)
-        {
-            return false;
-        }
-
-        /// <summary>
-        ///   异步加载场景
-        /// </summary>
-        public SceneLoadRequest LoadSceneAsync(string scene_name
-                                                , LoadSceneMode mode = LoadSceneMode.Single
-                                                , bool unload_assetbundle = true)
+        /// <summary>异步加载场景</summary>
+        public SceneLoadRequest LoadSceneAsync(string scene_name, LoadSceneMode mode = LoadSceneMode.Single, bool unload_assetbundle = true)
         {
             try
             {
                 if (!IsPlatformSupport)
-                {
                     return null;
-                }
                 if (!IsReady || IsFailed)
                     return null;
 
@@ -378,9 +292,7 @@ namespace zcode.AssetBundlePacker
             return null;
         }
 
-        /// <summary>
-        /// 卸载一个场景资源
-        /// </summary>
+        /// <summary>卸载一个场景资源</summary>
         public void UnloadScene(string scene_name)
         {
             scene_name = scene_name.ToLower();
@@ -405,50 +317,7 @@ namespace zcode.AssetBundlePacker
             }
         }
 
-        /*
-        /// <summary>
-        ///   异步加载场景
-        /// </summary>
-        public SceneLoadRequest LoadSceneAsync(string scene_name
-                                                , LoadSceneMode mode = LoadSceneMode.Single
-                                                , bool unload_assetbundle = true
-                                                , bool unload_all_loaded_objects = false)
-        {
-            try
-            {
-                if (!IsReady)
-                {
-                    return null;
-                }
-
-                string assetbundlename = FindAssetBundleNameByScene(scene_name);
-                if (string.IsNullOrEmpty(assetbundlename))
-                {
-                    return null;
-                }
-                if (!CanLoadAssetBundleAndDependencies(assetbundlename))
-                {
-                    return null;
-                }
-
-                SceneAsyncLoader loader = new SceneAsyncLoader(assetbundlename
-                    , scene_name, mode, unload_assetbundle);
-                SceneLoadRequest req = new SceneLoadRequest(loader);
-                StartCoroutine("StartLoadAssetAsync", loader);
-                return req;
-            }
-            catch (System.Exception ex)
-            {
-                Debug.LogError("AssetBundleManager.LoadAsset is falid!\n" + ex.Message);
-            }
-
-            return null;
-        }
-        */
-
-        /// <summary>
-        ///   判断一个AssetBundle是否存在缓存
-        /// </summary>
+        /// <summary>判断一个AssetBundle是否存在缓存</summary>
         public bool IsExist(string assetbundlename)
         {
             if (string.IsNullOrEmpty(assetbundlename))
@@ -457,9 +326,7 @@ namespace zcode.AssetBundlePacker
             return File.Exists(Common.GetFileFullName(assetbundlename));
         }
 
-        /// <summary>
-        ///   判断一个资源是否存在于AssetBundle中
-        /// </summary>
+        /// <summary>判断一个资源是否存在于AssetBundle中</summary>
         public bool IsAssetExist(string asset)
         {
             string[] assetbundlesname = FindAllAssetBundleNameByAsset(asset);
@@ -472,17 +339,13 @@ namespace zcode.AssetBundlePacker
             return false;
         }
 
-        /// <summary>
-        ///   判断场景是否存在于AssetBundle中
-        /// </summary>
+        /// <summary>判断场景是否存在于AssetBundle中</summary>
         public bool IsSceneExist(string scene_name)
         {
             return !string.IsNullOrEmpty(FindAssetBundleNameByScene(scene_name));
         }
 
-        /// <summary>
-        ///   获得AssetBundle中的所有资源
-        /// </summary>
+        /// <summary>获得AssetBundle中的所有资源</summary>
         public string[] FindAllAssetNames(string assetbundlename)
         {
             AssetBundle bundle = LoadAssetBundle(assetbundlename);
@@ -491,35 +354,25 @@ namespace zcode.AssetBundlePacker
             return null;
         }
 
-        /// <summary>
-        ///   获得包含某个资源的所有AssetBundle
-        /// </summary>
+        /// <summary>获得包含某个资源的所有AssetBundle</summary>
         public string[] FindAllAssetBundleNameByAsset(string asset)
         {
             if (ResManifest == null)
-            {
                 return null;
-            }
 
             return ResManifest.GetAllAssetBundleName(asset);
         }
 
-        /// <summary>
-        ///   获得一个场景的包名
-        /// </summary>
+        /// <summary>获得一个场景的包名</summary>
         public string FindAssetBundleNameByScene(string scene_name)
         {
             if (ResManifest == null)
-            {
                 return null;
-            }
 
             return ResManifest.GetAssetBundleNameBySceneLevelName(scene_name);
         }
 
-        /// <summary>
-        ///   获得指定资源包的AssetBundle列表
-        /// </summary>
+        /// <summary>获得指定资源包的AssetBundle列表</summary>
         public List<string> FindAllAssetBundleFilesNameByPackage(string package_name)
         {
             if (ResPackages == null)
@@ -549,32 +402,17 @@ namespace zcode.AssetBundlePacker
 
             return result.Count > 0 ? result : null;
         }
-
-        /// <summary>
-        ///   释放所有的AssetBundle
-        /// </summary>
-        [System.Obsolete("Use AssetBundleManager.UnloadAllAssetBundle")]
-        public void UnloadAssetBundle(bool unload_all_loaded_objects)
-        {
-            UnloadAssetBundleCache(unload_all_loaded_objects);
-            UnloadAssetBundlePermanent(unload_all_loaded_objects);
-        }
-
-        /// <summary>
-        ///   释放所有的AssetBundle
-        /// </summary>
+        /// <summary>释放所有的AssetBundle</summary>
         public void UnloadAllAssetBundle(bool unload_all_loaded_objects)
         {
             UnloadAssetBundleCache(unload_all_loaded_objects);
             UnloadAssetBundlePermanent(unload_all_loaded_objects);
         }
 
-        /// <summary>
-        ///   释放所有缓存的AssetBundle
-        /// </summary>
+        /// <summary>释放所有缓存的AssetBundle</summary>
         public void UnloadAssetBundleCache(bool unload_all_loaded_objects)
         {
-            if(assetbundle_cache_ != null && assetbundle_cache_.Count > 0)
+            if (assetbundle_cache_ != null && assetbundle_cache_.Count > 0)
             {
                 var itr = assetbundle_cache_.Values.GetEnumerator();
                 while (itr.MoveNext())
@@ -586,9 +424,7 @@ namespace zcode.AssetBundlePacker
             }
         }
 
-        /// <summary>
-        ///   加载所有依赖的AssetBundle
-        /// </summary>
+        /// <summary>加载所有依赖的AssetBundle</summary>
         string[] LoadDependenciesAssetBundle(string assetbundlename)
         {
             if (assetbundlename == null)
@@ -610,9 +446,7 @@ namespace zcode.AssetBundlePacker
             return deps;
         }
 
-        /// <summary>
-        ///   加载AssetBundle
-        /// </summary>
+        /// <summary>加载AssetBundle</summary>
         AssetBundle LoadAssetBundle(string assetbundlename)
         {
             if (assetbundlename == null)
@@ -631,7 +465,7 @@ namespace zcode.AssetBundlePacker
             if (ab == null)
             {
                 string assetbundle_path = GetAssetBundlePath(assetbundlename);
-                if (System.IO.File.Exists(assetbundle_path))
+                if (File.Exists(assetbundle_path))
                 {
                     ab = AssetBundle.LoadFromFile(assetbundle_path);
                 }
@@ -641,9 +475,7 @@ namespace zcode.AssetBundlePacker
             return ab;
         }
 
-        /// <summary>
-        ///   异步加载一个AssetBundle
-        /// </summary>
+        /// <summary>异步加载一个AssetBundle</summary>
         IEnumerator LoadAssetBundleAsync(string assetbundlename)
         {
             if (assetbundlename == null)
@@ -682,12 +514,10 @@ namespace zcode.AssetBundlePacker
             yield break;
         }
 
-        /// <summary>
-        ///   释放所有常驻的AssetBundle
-        /// </summary>
+        /// <summary>释放所有常驻的AssetBundle</summary>
         void UnloadAssetBundlePermanent(bool unload_all_loaded_objects)
         {
-            if(assetbundle_permanent_ != null && assetbundle_permanent_.Count > 0)
+            if (assetbundle_permanent_ != null && assetbundle_permanent_.Count > 0)
             {
                 var itr = assetbundle_permanent_.Values.GetEnumerator();
                 while (itr.MoveNext())
@@ -699,9 +529,7 @@ namespace zcode.AssetBundlePacker
             }
         }
 
-        /// <summary>
-        /// 保存AssetBundle到加载队列
-        /// </summary>
+        /// <summary>保存AssetBundle到加载队列</summary>
         void SaveAssetBundle(string assetbundlename, AssetBundle ab)
         {
             //根据AssetBundleDescribe分别存放AssetBundle
@@ -719,9 +547,7 @@ namespace zcode.AssetBundlePacker
             }
         }
 
-        /// <summary>
-        /// 保存资源依赖，用于后续卸载资源
-        /// </summary>
+        /// <summary>保存资源依赖，用于后续卸载资源</summary>
         void SaveAssetDependency(string asset, string assetbundle)
         {
             int refCount = 0;
@@ -738,9 +564,7 @@ namespace zcode.AssetBundlePacker
             };
         }
 
-        /// <summary>
-        /// 保存到缓存中
-        /// </summary>
+        /// <summary>保存到缓存中</summary>
         void SaveAssetBundleToCache(string assetbundleName, AssetBundle ab)
         {
             int refCount = 0;
@@ -757,12 +581,10 @@ namespace zcode.AssetBundlePacker
             };
         }
 
-        /// <summary>
-        /// 处理缓存的多个AssetBundle, 如果没有引用则卸载
-        /// </summary>
+        /// <summary>处理缓存的多个AssetBundle, 如果没有引用则卸载</summary>
         void DisposeAssetBundleCache(string[] assetbundlesName, bool unload_all_loaded_objects)
         {
-            if(assetbundlesName != null && assetbundlesName.Length > 0)
+            if (assetbundlesName != null && assetbundlesName.Length > 0)
             {
                 for (int index = 0; index < assetbundlesName.Length; index++)
                 {
@@ -771,9 +593,7 @@ namespace zcode.AssetBundlePacker
             }
         }
 
-        /// <summary>
-        /// 处理缓存的AssetBundle, 如果没有引用则卸载
-        /// </summary>
+        /// <summary>处理缓存的AssetBundle, 如果没有引用则卸载</summary>
         void DisposeAssetBundleCache(string assetbundleName, bool unload_all_loaded_objects)
         {
             Cache cache;
@@ -792,9 +612,7 @@ namespace zcode.AssetBundlePacker
             }
         }
 
-        /// <summary>
-        ///   查找是否有已载加的AssetBundle
-        /// </summary>
+        /// <summary>查找是否有已载加的AssetBundle</summary>
         AssetBundle FindLoadedAssetBundle(string assetbundlename)
         {
             if (assetbundlename == null)
@@ -815,9 +633,7 @@ namespace zcode.AssetBundlePacker
             return ab;
         }
 
-        /// <summary>
-        /// 获得AssetBundle的依赖
-        /// </summary>
+        /// <summary>获得AssetBundle的依赖</summary>
         public string[] GetAllDependencies(string assetbundlename)
         {
             if (assetbundlename == null)
@@ -828,18 +644,14 @@ namespace zcode.AssetBundlePacker
             return MainManifest.GetAllDependencies(assetbundlename);
         }
 
-        /// <summary>
-        /// 获得AssetBundle的依赖
-        /// </summary>
+        /// <summary>获得AssetBundle的依赖</summary>
         public bool HasDependencies(string assetbundlename)
         {
             var deps = GetAllDependencies(assetbundlename);
             return deps != null && deps.Length > 0;
         }
 
-        /// <summary>
-        ///   判断本地是否包含所有依赖
-        /// </summary>
+        /// <summary>判断本地是否包含所有依赖</summary>
         bool CanLoadAssetBundleAndDependencies(string assetbundlename)
         {
             if (assetbundlename == null)
@@ -848,7 +660,7 @@ namespace zcode.AssetBundlePacker
                 return false;
 
             string assetbundle_path = GetAssetBundlePath(assetbundlename);
-            if (!System.IO.File.Exists(assetbundle_path))
+            if (!File.Exists(assetbundle_path))
             {
                 return false;
             }
@@ -860,7 +672,7 @@ namespace zcode.AssetBundlePacker
                 if (ab == null)
                 {
                     string path = GetAssetBundlePath(deps[index]);
-                    if (!System.IO.File.Exists(path))
+                    if (!File.Exists(path))
                     {
                         return false;
                     }
@@ -870,33 +682,25 @@ namespace zcode.AssetBundlePacker
             return true;
         }
 
-        /// <summary>
-        ///   异步加载一个资源
-        /// </summary>
+        /// <summary>异步加载一个资源</summary>
         IEnumerator StartLoadAssetAsync(AssetAsyncLoader loader)
         {
             yield return loader.StartLoadAssetAsync(this);
         }
 
-        /// <summary>
-        ///   异步加载一个场景
-        /// </summary>
+        /// <summary>异步加载一个场景</summary>
         IEnumerator StartLoadSceneAsync(SceneAsyncLoader loader)
         {
             yield return loader.StartLoadSceneAsync(this);
         }
 
-        /// <summary>
-        /// 获得AssetBundle的路径
-        /// </summary>
+        /// <summary>获得AssetBundle的路径</summary>
         static string GetAssetBundlePath(string assetbundlename)
         {
             return Common.PATH + "/" + assetbundlename;
         }
 
-        /// <summary>
-        /// 版本号比较
-        /// </summary>
+        /// <summary>版本号比较</summary>
         public static int CompareVersion(string ver1, string ver2)
         {
             if (string.IsNullOrEmpty(ver1))
@@ -959,24 +763,30 @@ namespace zcode.AssetBundlePacker
             Debug.LogError(sb.ToString());
         }
 
-        /// <summary>
-        ///   启动(仅内部启用)
-        /// </summary>
+        /// <summary>启动(仅内部启用)</summary>
         void Launch()
         {
             if (assetbundle_permanent_ == null)
-            { assetbundle_permanent_ = new Dictionary<string, AssetBundle>(); }
+            {
+                assetbundle_permanent_ = new Dictionary<string, AssetBundle>();
+            }
             if (assetbundle_cache_ == null)
-            { assetbundle_cache_ = new Dictionary<string, Cache>(); }
+            {
+                assetbundle_cache_ = new Dictionary<string, Cache>();
+            }
             if (asset_dependency_cache_ == null)
-            { asset_dependency_cache_ = new Dictionary<string, AssetDependCache>(); }
+            {
+                asset_dependency_cache_ = new Dictionary<string, AssetDependCache>();
+            }
             if (assetbundle_async_loading_ == null)
-            { assetbundle_async_loading_ = new HashSet<string>(); }
+            {
+                assetbundle_async_loading_ = new HashSet<string>();
+            }
             strVersion = "";
             IsReady = false;
             ErrorCode = emErrorCode.None;
 
-            if(IsPlatformSupport)
+            if (IsPlatformSupport)
             {
                 StopAllCoroutines();
                 StartCoroutine(Preprocess());
@@ -987,9 +797,7 @@ namespace zcode.AssetBundlePacker
             }
         }
 
-        /// <summary>
-        /// 关闭
-        /// </summary>
+        /// <summary>关闭</summary>
         void ShutDown()
         {
             StopAllCoroutines();
@@ -997,54 +805,33 @@ namespace zcode.AssetBundlePacker
         }
 
         #region Loader
-        /// <summary>
-        /// 资源异步加载器
-        /// </summary>
+        /// <summary>资源异步加载器</summary>
         internal class AssetAsyncLoader
         {
-            /// <summary>
-            /// AssetBundle名称
-            /// </summary>
+            /// <summary>AssetBundle名称</summary>
             public string AssetBundleName { get; private set; }
 
-            /// <summary>
-            /// 资源名称(全部小写)
-            /// </summary>
+            /// <summary>资源名称(全部小写)</summary>
             public string AssetName { get; private set; }
 
-            /// <summary>
-            /// 资源名称（原始名称）
-            /// </summary>
+            /// <summary>资源名称（原始名称）</summary>
             public string OrignalAssetName { get; private set; }
 
-            /// <summary>
-            /// 加载完成卸载AssetBundle
-            /// </summary>
+            /// <summary>加载完成卸载AssetBundle</summary>
             public bool UnloadAssetBundle { get; private set; }
 
-            /// <summary>
-            /// 是否加载完成?
-            /// </summary>
+            /// <summary>是否加载完成?</summary>
             public bool IsDone { get; private set; }
 
-            /// <summary>
-            /// 加载进度.
-            /// </summary>
+            /// <summary>加载进度.</summary>
             public float Progress { get; private set; }
 
-            /// <summary>
-            /// 已加载的资源
-            /// </summary>
+            /// <summary>已加载的资源</summary>
             public Object Asset { get; private set; }
 
-            /// <summary>
-            /// 已加载的子资源
-            /// </summary>
+            /// <summary>已加载的子资源</summary>
             public Object[] AllAssets { get; private set; }
 
-            /// <summary>
-            /// 
-            /// </summary>
             public AssetAsyncLoader(string assetbundlename, string asset_name, string orignal_asset_name, bool unload_assetbundle)
             {
                 AssetBundleName = assetbundlename;
@@ -1057,9 +844,7 @@ namespace zcode.AssetBundlePacker
                 AllAssets = null;
             }
 
-            /// <summary>
-            ///   加载一个资源
-            /// </summary>
+            /// <summary>加载一个资源</summary>
             public IEnumerator StartLoadAssetAsync(AssetBundleManager mgr)
             {
                 if (string.IsNullOrEmpty(AssetBundleName))
@@ -1079,7 +864,7 @@ namespace zcode.AssetBundlePacker
                 if (deps != null)
                 {
                     count += deps.Length;
-                    
+
                     for (int index = 0; index < deps.Length; index++)
                     {
                         yield return mgr.LoadAssetBundleAsync(deps[index]);
@@ -1125,47 +910,28 @@ namespace zcode.AssetBundlePacker
             }
         }
 
-        /// <summary>
-        /// 场景异步加载器
-        /// </summary>
+        /// <summary>场景异步加载器</summary>
         internal class SceneAsyncLoader
         {
-            /// <summary>
-            /// AssetBundle名称
-            /// </summary>
+            /// <summary>AssetBundle名称</summary>
             public string AssetBundleName { get; private set; }
 
-            /// <summary>
-            /// 场景名称
-            /// </summary>
+            /// <summary>场景名称</summary>
             public string SceneName { get; private set; }
 
-            /// <summary>
-            /// 加载场景模式
-            /// </summary>
+            /// <summary>加载场景模式</summary>
             public LoadSceneMode LoadMode { get; private set; }
 
-            /// <summary>
-            /// 加载完成卸载AssetBundle
-            /// </summary>
+            /// <summary>加载完成卸载AssetBundle</summary>
             public bool UnloadAssetBundle { get; private set; }
 
-            /// <summary>
-            /// 是否加载完成?
-            /// </summary>
+            /// <summary>是否加载完成?</summary>
             public bool IsDone { get; private set; }
 
-            /// <summary>
-            /// 加载进度.
-            /// </summary>
+            /// <summary>加载进度.</summary>
             public float Progress { get; private set; }
 
-            /// <summary>
-            /// 
-            /// </summary>
-            public SceneAsyncLoader(string assetbundlename, string scene_name
-                , LoadSceneMode mode
-                , bool unload_assetbundle)
+            public SceneAsyncLoader(string assetbundlename, string scene_name, LoadSceneMode mode, bool unload_assetbundle)
             {
                 AssetBundleName = assetbundlename;
                 SceneName = scene_name;
@@ -1175,9 +941,7 @@ namespace zcode.AssetBundlePacker
                 Progress = 0f;
             }
 
-            /// <summary>
-            /// 加载一个场景
-            /// </summary>
+            /// <summary>加载一个场景</summary>
             public IEnumerator StartLoadSceneAsync(AssetBundleManager mgr)
             {
                 if (string.IsNullOrEmpty(AssetBundleName))
@@ -1241,18 +1005,14 @@ namespace zcode.AssetBundlePacker
         #endregion
 
         #region Cache
-        /// <summary>
-        /// AssetBundle引用缓存结构
-        /// </summary>
+        /// <summary>AssetBundle引用缓存结构</summary>
         struct Cache
         {
             public int RefCount;
             public AssetBundle RefAssetBundle;
         }
 
-        /// <summary>
-        /// 资源依赖缓存
-        /// </summary>
+        /// <summary>资源依赖缓存</summary>
         struct AssetDependCache
         {
             public int RefCount;
@@ -1262,9 +1022,7 @@ namespace zcode.AssetBundlePacker
         #endregion
 
         #region Preprocess
-        /// <summary>
-        /// 状态
-        /// </summary>
+        /// <summary>状态</summary>
         public enum emPreprocessState
         {
             None,               // 无
@@ -1276,39 +1034,24 @@ namespace zcode.AssetBundlePacker
             Failed,             // 失败
         }
 
-        /// <summary>
-        /// 预加载信息
-        /// </summary>
+        /// <summary>预加载信息</summary>
         public class PreprocessInformation
         {
-            /// <summary>
-            ///   当前状态
-            /// </summary>
+            /// <summary>当前状态</summary>
             public emPreprocessState State { get; private set; }
 
-            /// <summary>
-            ///   当前状态的进度
-            /// </summary>
+            /// <summary>当前状态的进度</summary>
             public float Progress { get; private set; }
 
-            /// <summary>
-            ///   当前状态的的总量值
-            /// </summary>
+            /// <summary>当前状态的的总量值</summary>
             public float Total { get; private set; }
 
-            /// <summary>
-            ///   当前状态的进度
-            /// </summary>
+            /// <summary>当前状态的进度</summary>
             public float CurrentStateProgressPercent { get { return Total != 0 ? Progress / Total : 0f; } }
 
-            /// <summary>
-            /// 是否需要拷贝所有配置文件
-            /// </summary>
+            /// <summary>是否需要拷贝所有配置文件</summary>
             public bool NeedCopyAllConfig;
 
-            /// <summary>
-            /// 
-            /// </summary>
             public PreprocessInformation()
             {
                 this.State = emPreprocessState.None;
@@ -1316,9 +1059,7 @@ namespace zcode.AssetBundlePacker
                 this.Total = 1f;
             }
 
-            /// <summary>
-            /// 更新
-            /// </summary>
+            /// <summary>更新</summary>
             public void UpdateState(emPreprocessState state)
             {
                 this.State = state;
@@ -1326,9 +1067,7 @@ namespace zcode.AssetBundlePacker
                 this.Total = 1f;
             }
 
-            /// <summary>
-            /// 更新
-            /// </summary>
+            /// <summary>更新</summary>
             public void UpdateProgress(float value, float total)
             {
                 this.Progress = value;
@@ -1336,14 +1075,10 @@ namespace zcode.AssetBundlePacker
             }
         }
 
-        /// <summary>
-        /// 当前状态进度
-        /// </summary>
+        /// <summary>当前状态进度</summary>
         public PreprocessInformation preprocessInformation { get; private set; }
 
-        /// <summary>
-        ///   初始化
-        /// </summary>
+        /// <summary>初始化</summary>
         IEnumerator Preprocess()
         {
             preprocessInformation = new PreprocessInformation();
@@ -1383,9 +1118,7 @@ namespace zcode.AssetBundlePacker
             preprocessInformation = null;
         }
 
-        /// <summary>
-        ///   初始化 - 安装包资源初始化
-        /// </summary>
+        /// <summary>初始化 - 安装包资源初始化</summary>
         IEnumerator PreProcessInstallNativeAssets()
         {
             if (ErrorCode != emErrorCode.None)
@@ -1436,9 +1169,7 @@ namespace zcode.AssetBundlePacker
             preprocessInformation.NeedCopyAllConfig = true;
         }
 
-        /// <summary>
-        /// 初始化 - 最新版本资源拷贝
-        /// </summary>
+        /// <summary>初始化 - 最新版本资源拷贝</summary>
         IEnumerator PreprocessUpdateNativeAssets()
         {
             if (ErrorCode != emErrorCode.None)
@@ -1540,17 +1271,13 @@ namespace zcode.AssetBundlePacker
             }
         }
 
-        /// <summary>
-        /// 初始化 - 更新所有配置文件
-        /// </summary>
+        /// <summary>初始化 - 更新所有配置文件</summary>
         IEnumerator PreprocessUpdateAllConfig()
         {
             if (ErrorCode != emErrorCode.None)
-            {
                 yield break;
-            }
 
-            if(preprocessInformation.NeedCopyAllConfig)
+            if (preprocessInformation.NeedCopyAllConfig)
             {
                 // 拷贝配置文件（部分配置文件为非必要性文件所以需单独下载判断）
                 for (int i = 0; i < Common.CONFIG_NAME_ARRAY.Length; ++i)
@@ -1586,9 +1313,7 @@ namespace zcode.AssetBundlePacker
             }
         }
 
-        /// <summary>
-        /// 初始化 - 加载资源
-        /// </summary>
+        /// <summary>初始化 - 加载资源</summary>
         IEnumerator PreprocessLoad()
         {
             if (ErrorCode != emErrorCode.None)
@@ -1599,25 +1324,21 @@ namespace zcode.AssetBundlePacker
             MainManifest = Common.LoadMainManifest();
             if (MainManifest == null)
             {
-                Error(emErrorCode.LoadMainManifestFailed
-                    , "Can't load MainManifest file!");
+                Error(emErrorCode.LoadMainManifestFailed, "Can't load MainManifest file!");
                 yield break;
             }
             //ResourcesManifest
             ResManifest = Common.LoadResourcesManifest();
             if (ResManifest == null)
             {
-                Error(emErrorCode.LoadResourcesManifestFailed
-                    , "Can't load ResourcesManifest file!");
+                Error(emErrorCode.LoadResourcesManifestFailed, "Can't load ResourcesManifest file!");
                 yield break;
             }
             // ResourcesPackages
             ResPackages = Common.LoadResourcesPackages();
 
             //加载常驻资源
-            if (ResManifest != null
-                && ResManifest.Data != null
-                && ResManifest.Data.AssetBundles != null)
+            if (ResManifest != null && ResManifest.Data != null && ResManifest.Data.AssetBundles != null)
             {
                 var asset_bundles = ResManifest.Data.AssetBundles;
                 List<string> permanentAssetBundles = new List<string>(asset_bundles.Count);
@@ -1643,9 +1364,7 @@ namespace zcode.AssetBundlePacker
                 preprocessInformation.UpdateProgress(1f, 1f);
             }
         }
-        /// <summary>
-        /// 初始化 - 结束前后备工作
-        /// </summary>
+        /// <summary>初始化 - 结束前后备工作</summary>
         IEnumerator PreprocessDispose()
         {
             if (IsFailed)
@@ -1662,9 +1381,7 @@ namespace zcode.AssetBundlePacker
 
             yield return null;
         }
-        /// <summary>
-        /// 初始化 - 完成
-        /// </summary>
+        /// <summary>初始化 - 完成</summary>
         IEnumerator PreprocessFinished()
         {
             //记录当前版本号
@@ -1674,9 +1391,6 @@ namespace zcode.AssetBundlePacker
             yield return null;
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
         IEnumerator StartCopyInitialFileToCache(string local_name)
         {
             StreamingAssetsCopy copy = new StreamingAssetsCopy();
@@ -1693,9 +1407,6 @@ namespace zcode.AssetBundlePacker
             }
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
         IEnumerator StartCopyInitialFileToNative(string local_name)
         {
             StreamingAssetsCopy copy = new StreamingAssetsCopy();
@@ -1712,9 +1423,6 @@ namespace zcode.AssetBundlePacker
             }
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
         IEnumerator StartBatchCopyInitialFileToNative(List<string> files
             , System.Action<AssetBundleBatchCopy> callback)
         {
@@ -1727,9 +1435,6 @@ namespace zcode.AssetBundlePacker
             AssetBundleBatchCopy.Destroy(batchCopy);
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
         void ErrorWriteFile(emIOOperateCode resultCode, string message)
         {
             if (resultCode == emIOOperateCode.DiskFull)
@@ -1748,17 +1453,12 @@ namespace zcode.AssetBundlePacker
         #endregion
 
         #region MonoBahaviour
-        /// <summary>
-        ///   
-        /// </summary>
+
         void Awake()
         {
             Launch();
         }
 
-        /// <summary>
-        ///   
-        /// </summary>
         void OnDestroy()
         {
             ShutDown();

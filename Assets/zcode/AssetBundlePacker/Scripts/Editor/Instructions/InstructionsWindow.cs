@@ -1,20 +1,21 @@
-﻿/***************************************************************
- * Copyright 2016 By Zhang Minglin
- * Author: Zhang Minglin
- * Create: 2016/12/19
- * Note  : 使用说明
-***************************************************************/
-using UnityEditor;
+﻿using UnityEditor;
 using UnityEngine;
-using System.Collections;
 
+/// <summary>使用说明</summary>
 public class InstructionsWindow : EditorWindow
 {
+    [MenuItem("AssetBundle/Instructions", false, 1)]
+    public static void Open()
+    {
+        EditorWindow.GetWindow<InstructionsWindow>(true, "使用说明", true).Show();
+    }
+
+    void OnGUI()
+    {
+        GUILayout.Label(instructions);
+    }
     string instructions;
 
-    /// <summary>
-    /// 
-    /// </summary>
     private void Awake()
     {
         instructions =
@@ -55,20 +56,5 @@ public class InstructionsWindow : EditorWindow
       + "      Example - 0: 展示AssetBundlePacker插件如何启动、AssetBundle如何加载使用等\n"
       + "      Example - 1: 展示AssetBundle如何更新（例子如需完整运行要按例子的需求配置AssetBundle下载的远程服务器）\n"
       + "      Example - 2: 展示资源包的使用方式，包含下载、更新、使用等（例子如需完整运行要按例子的需求配置AssetBundle下载的远程服务器）\n";
-    }
-
-
-    /// <summary>
-    /// 
-    /// </summary>
-    void OnGUI()
-    {
-        GUILayout.Label(instructions);
-    }
-
-    [MenuItem("AssetBundle/Instructions", false, 1)]
-    public static void Open()
-    {
-        EditorWindow.GetWindow<InstructionsWindow>(true, "使用说明", true).Show();
     }
 }

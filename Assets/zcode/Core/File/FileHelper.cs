@@ -1,25 +1,14 @@
-﻿/***************************************************************
- * Copyright 2016 By Zhang Minglin
- * Author: Zhang Minglin
- * Create: 2015/12/17
- * Note  : 文件常用操作
-***************************************************************/
-using UnityEngine;
+﻿using System;
 using System.Collections;
 using System.IO;
-using System.Collections.Generic;
-using System;
+using UnityEngine;
 
 namespace zcode
 {
-    /// <summary>
-    /// 
-    /// </summary>
+    /// <summary>文件常用操作</summary>
     public static class FileHelper
     {
-        /// <summary>
-        ///   拷贝文件
-        /// </summary>
+        /// <summary>拷贝文件</summary>
         public static bool CopyFile(string src, string dest, bool overwrite = false)
         {
             //不存在则返回
@@ -36,15 +25,13 @@ namespace zcode
             return true;
         }
 
-        /// <summary>
-        ///   判断是否是可忽略的扩展
-        /// </summary>
+        /// <summary>判断是否是可忽略的扩展</summary>
         public static bool IsIgnoreFile(string file_name, string[] ignore_extensions)
         {
             if (ignore_extensions == null)
                 return false;
 
-            string extension = System.IO.Path.GetExtension(file_name);
+            string extension = Path.GetExtension(file_name);
             for (int i = 0; i < ignore_extensions.Length; ++i)
             {
                 if (extension == ignore_extensions[i])
@@ -54,9 +41,7 @@ namespace zcode
             return false;
         }
 
-        /// <summary>
-        ///   判断是否需要忽略
-        /// </summary>
+        /// <summary>判断是否需要忽略</summary>
         public static bool IsIgnoreFolder(string full_name, string[] ignore_folders)
         {
             if (ignore_folders == null)
@@ -72,15 +57,13 @@ namespace zcode
             return false;
         }
 
-        /// <summary>
-        /// 拷贝原目录下所有文件和文件夹至目标目录
-        /// </summary>
+        /// <summary>拷贝原目录下所有文件和文件夹至目标目录</summary>
         public static bool CopyDirectoryAllChildren(string scr_folder
                                                     , string dest_folder
                                                     , string[] ignore_extensions = null
                                                     , string[] ignore_folders = null
                                                     , bool is_cover = false
-                                                    , System.Action<string> notify_callback = null)
+                                                    , Action<string> notify_callback = null)
         {
             try
             {
@@ -121,8 +104,7 @@ namespace zcode
                 string[] dirs = Directory.GetDirectories(scr_folder);
                 foreach (string dir in dirs)
                 {
-                    CopyDirectoryAllChildren(dir, dest_folder + Path.GetFileName(dir)
-                                            , ignore_extensions, ignore_folders, is_cover, notify_callback);
+                    CopyDirectoryAllChildren(dir, dest_folder + Path.GetFileName(dir), ignore_extensions, ignore_folders, is_cover, notify_callback);
                 }
             }
             catch (Exception ex)
@@ -133,9 +115,7 @@ namespace zcode
             return true;
         }
 
-        /// <summary>
-        /// 写入文件
-        /// </summary>
+        /// <summary>写入文件</summary>
         /// <param name="path">文件全局路径</param>
         /// <param name="text">写入的内容.</param>
         public static void WriteTextToFile(string path, string text)
@@ -144,9 +124,7 @@ namespace zcode
             WriteBytesToFile(path, bytes, bytes.Length);
         }
 
-        /// <summary>
-        /// 写入文件
-        /// </summary>
+        /// <summary>写入文件</summary>
         /// <param name="path">文件全局路径</param>
         /// <param name="bytes">写入的内容.</param>
         /// <param name="length">写入长度.</param>
@@ -170,35 +148,31 @@ namespace zcode
 
                 return emIOOperateCode.Succeed;
             }
-            catch (System.IO.IOException ex)
+            catch (IOException ex)
             {
                 Debug.LogErrorFormat("WriteBytesToFile() = FAILED! Msg:{0}, Type:{1}", ex.Message, ex.GetType());
                 return emIOOperateCode.DiskFull;
             }
-            catch(Exception)
+            catch (Exception)
             {
                 return emIOOperateCode.Fail;
             }
         }
 
-        /// <summary>
-        /// 获取文件下所有文件大小
-        /// </summary>
+        /// <summary>获取文件下所有文件大小</summary>
         /// <param name="filePath"></param>
         /// <returns></returns>
         public static int GetAllFileSize(string filePath)
         {
             int sum = 0;
             if (!Directory.Exists(filePath))
-            {
                 return 0;
-            }
 
             DirectoryInfo dti = new DirectoryInfo(filePath);
 
             FileInfo[] fi = dti.GetFiles();
 
-            for (int i = 0; i < fi.Length; ++i )
+            for (int i = 0; i < fi.Length; ++i)
             {
                 sum += Convert.ToInt32(fi[i].Length / 1024);
             }
@@ -215,9 +189,7 @@ namespace zcode
             return sum;
         }
 
-        /// <summary>
-        /// 获取指定文件大小
-        /// </summary>
+        /// <summary>获取指定文件大小</summary>
         /// <param name="file_path"></param>
         /// <returns></returns>
         public static long GetFileSize(string file_path)
@@ -235,9 +207,7 @@ namespace zcode
             return sum;
         }
 
-        /// <summary>
-        ///   创建本地AssetBundle文件
-        /// </summary>
+        /// <summary>创建本地AssetBundle文件</summary>
         /// <param name="path">文件全局路径</param>
         /// <param name="bytes">写入的内容.</param>
         /// <param name="length">写入长度.</param>
@@ -254,9 +224,7 @@ namespace zcode
             }
         }
 
-        /// <summary>
-        ///   读取本地AssetBundle文件
-        /// </summary>
+        /// <summary>读取本地AssetBundle文件</summary>
         static IEnumerator LoadAssetbundleFromLocal(string path, string name)
         {
             WWW w = new WWW("file:///" + path + "/" + name);
@@ -278,7 +246,7 @@ namespace zcode
             src = "file:///" + src;
 #endif
             bool is_done = false;
-            do 
+            do
             {
                 using (WWW w = new WWW(src))
                 {
@@ -300,20 +268,16 @@ namespace zcode
             } while (force && !is_done);
         }
 
-        /// <summary>
-        /// 删除文件.
-        /// </summary>
+        /// <summary>删除文件</summary>
         /// <param name="path">删除完整文件夹路径.</param>
         /// <param name="name">删除文件的名称.</param>
         public static void DeleteFile(string path, string name)
         {
             File.Delete(path + name);
         }
-        /// <summary>
-        /// 删除文件
-        /// </summary>
-        /// <param name="path"></param>
-        /// <param name="filesName"></param>
+        /// <summary>删除文件</summary>
+        /// <param name="path">删除完整文件夹路径</param>
+        /// <param name="filesName">删除文件的名称.</param>
         /// <returns></returns>
         public static bool DeleteFiles(string path, string filesName)
         {
@@ -337,9 +301,7 @@ namespace zcode
             return isDelete;
         }
 
-        /// <summary>
-        ///   删除文件夹下所有子文件夹与文件
-        /// </summary>
+        /// <summary>删除文件夹下所有子文件夹与文件</summary>
         public static void DeleteAllChild(string path, FileAttributes filter)
         {
             if (!Directory.Exists(path))
@@ -347,7 +309,7 @@ namespace zcode
 
             DirectoryInfo dir = new DirectoryInfo(path);
             FileInfo[] files = dir.GetFiles("*");
-            for(int i = 0 ; i < files.Length ; ++i)
+            for (int i = 0; i < files.Length; ++i)
             {
                 if ((files[i].Attributes & filter) > 0)
                     continue;
@@ -365,9 +327,7 @@ namespace zcode
             }
         }
 
-        /// <summary>
-        ///   绝对路径转相对路径
-        /// </summary>
+        /// <summary>绝对路径转相对路径</summary>
         public static string AbsoluteToRelativePath(string root_path, string absolute_path)
         {
             absolute_path = absolute_path.Replace('\\', '/');
@@ -383,9 +343,7 @@ namespace zcode
             return absolute_path.Substring(start, length);
         }
 
-        /// <summary>
-        ///   获得取除路径扩展名的路径
-        /// </summary>
+        /// <summary>获得取除路径扩展名的路径</summary>
         public static string GetPathWithoutExtension(string full_name)
         {
             int last_idx = full_name.LastIndexOfAny(".".ToCharArray());

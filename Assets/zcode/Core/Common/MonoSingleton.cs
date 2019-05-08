@@ -1,20 +1,9 @@
-﻿/***************************************************************
- * Copyright 2016 By Zhang Minglin
- * Author: Zhang Minglin
- * Create: 2015/09/24
- * Note  : 继承MonoBehaviour的单例
-***************************************************************/
-using UnityEngine;
-using System.Collections;
+﻿using UnityEngine;
 
-/// <summary>
-/// 
-/// </summary>
+/// <summary>继承MonoBehaviour的单例</summary>
 public abstract class MonoSingleton<T> : MonoBehaviour where T : MonoSingleton<T>
 {
-    /// <summary>
-    ///   单例实例
-    /// </summary>
+    /// <summary>单例实例</summary>
 	private static T instance_ = null;
 	public static T Instance
 	{
@@ -27,7 +16,7 @@ public abstract class MonoSingleton<T> : MonoBehaviour where T : MonoSingleton<T
                 {
                     if(Application.isPlaying)
                     {
-                        instance_ = new GameObject("SingletonOf" + typeof(T).ToString(), typeof(T)).GetComponent<T>();
+                        instance_ = new GameObject("SingletonOf:" + typeof(T).ToString(), typeof(T)).GetComponent<T>();
                         DontDestroyOnLoad(instance_);
                     }
                 }
@@ -36,17 +25,13 @@ public abstract class MonoSingleton<T> : MonoBehaviour where T : MonoSingleton<T
 		}
 	}
 
-    /// <summary>
-    ///  创建单例实例
-    /// </summary>
+    /// <summary>创建单例实例</summary>
     public static T CreateSingleton()
     {
         return Instance;
     }
 
-	/// <summary>
-    ///   确保在程序退出时销毁实例。
-	/// </summary>
+	/// <summary>确保在程序退出时销毁实例。</summary>
 	protected virtual void OnApplicationQuit()
 	{
 		instance_ = null;

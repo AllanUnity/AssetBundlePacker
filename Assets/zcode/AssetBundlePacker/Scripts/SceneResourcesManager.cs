@@ -1,62 +1,41 @@
-﻿/***************************************************************
- * Copyright 2016 By Zhang Minglin
- * Author: Zhang Minglin
- * Create: 2016/05/05
- * Note  : 场景管理器
-***************************************************************/
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.SceneManagement;
-using System.Collections;
 
 namespace zcode.AssetBundlePacker
 {
+    /// <summary>场景管理器</summary>
     public class SceneResourcesManager
     {
-        /// <summary>
-        /// 资源加载方式，默认采用DefaultLoadPattern
-        /// </summary>
+        /// <summary>资源加载方式，默认采用DefaultLoadPattern</summary>
         public static ILoadPattern LoadPattern = new DefaultLoadPattern();
 
-        /// <summary>
-        ///   异步加载场景
-        /// </summary>
-        public static bool LoadSceneAsync(string scene_name
-                                            , System.Action<string> callback
-                                            , LoadSceneMode mode = LoadSceneMode.Single)
+        /// <summary>异步加载场景</summary>
+        public static bool LoadSceneAsync(string scene_name, System.Action<string> callback, LoadSceneMode mode = LoadSceneMode.Single)
         {
             SceneLoadRequest req;
             return LoadSceneAsync(out req, scene_name, callback, mode);
         }
 
-        /// <summary>
-        ///   异步加载场景
-        /// </summary>
-        public static SceneLoadRequest LoadSceneAsync(string scene_name
-                                                    , LoadSceneMode mode = LoadSceneMode.Single)
+        /// <summary>异步加载场景</summary>
+        public static SceneLoadRequest LoadSceneAsync(string scene_name, LoadSceneMode mode = LoadSceneMode.Single)
         {
             SceneLoadRequest req;
             LoadSceneAsync(out req, scene_name, null, mode);
             return req;
         }
 
-        /// <summary>
-        ///   异步加载场景
-        /// </summary>
-        public static bool LoadSceneAsync(out SceneLoadRequest req
-                                            , string scene_name
-                                            , System.Action<string> callback = null
-                                            , LoadSceneMode mode = LoadSceneMode.Single)
+        /// <summary>异步加载场景</summary>
+        public static bool LoadSceneAsync(out SceneLoadRequest req, string scene_name, System.Action<string> callback = null, LoadSceneMode mode = LoadSceneMode.Single)
         {
             req = null;
 
 #if UNITY_EDITOR
-            if (LoadPattern.SceneLoadPattern == emLoadPattern.EditorAsset
-                || LoadPattern.SceneLoadPattern == emLoadPattern.All)
+            if (LoadPattern.SceneLoadPattern == emLoadPattern.EditorAsset || LoadPattern.SceneLoadPattern == emLoadPattern.All)
             {
                 if (!Application.CanStreamedLevelBeLoaded(scene_name))
                     return false;
 
-                var ao = UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(scene_name, mode);
+                var ao = SceneManager.LoadSceneAsync(scene_name, mode);
                 if (ao != null)
                 {
                     req = new SceneLoadRequest(ao);
@@ -69,8 +48,7 @@ namespace zcode.AssetBundlePacker
             }
 #endif
 
-            if (LoadPattern.SceneLoadPattern == emLoadPattern.AssetBundle
-                || LoadPattern.SceneLoadPattern == emLoadPattern.All)
+            if (LoadPattern.SceneLoadPattern == emLoadPattern.AssetBundle || LoadPattern.SceneLoadPattern == emLoadPattern.All)
             {
                 req = AssetBundleManager.Instance.LoadSceneAsync(scene_name, mode);
                 if (req != null)
@@ -83,8 +61,7 @@ namespace zcode.AssetBundlePacker
                     return true;
                 }
             }
-            if (LoadPattern.SceneLoadPattern == emLoadPattern.Original
-                || LoadPattern.SceneLoadPattern == emLoadPattern.All)
+            if (LoadPattern.SceneLoadPattern == emLoadPattern.Original || LoadPattern.SceneLoadPattern == emLoadPattern.All)
             {
                 if (!Application.CanStreamedLevelBeLoaded(scene_name))
                     return false;
@@ -103,9 +80,7 @@ namespace zcode.AssetBundlePacker
             return false;
         }
 
-        /// <summary>
-        ///   读取场景配置文件，生成场景对象
-        /// </summary>
+        /// <summary>读取场景配置文件，生成场景对象</summary>
         static void GenerateSceneObject(string scene_name)
         {
             if (!AssetBundleManager.Instance.IsSceneExist(scene_name))

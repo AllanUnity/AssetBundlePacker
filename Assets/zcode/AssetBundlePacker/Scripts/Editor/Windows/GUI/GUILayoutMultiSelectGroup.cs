@@ -7,86 +7,53 @@
  *         2. 支持自定义渲染方式
  *         3. 数据组织方式自定义(手动实现Node,NodeGroup类)
 ***************************************************************/
-using UnityEngine;
-using System.Collections;
 using System.Collections.Generic;
+using UnityEngine;
 
 /// <summary>
 /// 
 /// </summary>
 public class GUILayoutMultiSelectGroup
 {
-    /// <summary>
-    /// 节点
-    /// </summary>
+    /// <summary>节点</summary>
     public abstract class Node
     {
-        /// <summary>
-        /// 索引
-        /// </summary>
+        /// <summary>索引</summary>
         public int Index;
 
-        /// <summary>
-        /// 是否选中
-        /// </summary>
+        /// <summary>是否选中</summary>
         public bool IsSelect;
 
-        /// <summary>
-        /// 渲染
-        /// </summary>
+        /// <summary>渲染</summary>
         public abstract OperateResult Draw(float width);
     }
 
-    /// <summary>
-    /// 节点组
-    /// </summary>
+    /// <summary>节点组</summary>
     public abstract class NodeGroup
     {
-        /// <summary>
-        /// 渲染
-        /// </summary>
+        /// <summary>渲染</summary>
         public abstract OperateResult Draw(float width);
 
-        /// <summary>
-        /// 根据索引区间选中指定数量的节点
-        /// </summary>
+        /// <summary>根据索引区间选中指定数量的节点</summary>
         public abstract List<Node> GetRange(int begin, int end);
     }
 
-    /// <summary>
-    /// 操作结果
-    /// </summary>
+    /// <summary>操作结果</summary>
     public class OperateResult
     {
-        /// <summary>
-        /// 选中的节点
-        /// </summary>
+        /// <summary>选中的节点</summary>
         public Node SelectNode;
 
-        /// <summary>
-        /// 状态（可由子类赋值）
-        /// </summary>
+        /// <summary>状态（可由子类赋值）</summary>
         public object Status;
     }
 
-    /// <summary>
-    /// 
-    /// </summary>
     public NodeGroup Group;
 
-    /// <summary>
-    /// 
-    /// </summary>
     public List<Node> SelectNodes = new List<Node>();
 
-    /// <summary>
-    /// 
-    /// </summary>
     Node last_click_node_;
 
-    /// <summary>
-    ///   
-    /// </summary>
     private Vector2 scroll_ = Vector2.zero;
 
     public GUILayoutMultiSelectGroup(NodeGroup group)
@@ -94,9 +61,7 @@ public class GUILayoutMultiSelectGroup
         Group = group;
     }
 
-    /// <summary>
-    /// 更新选中操作
-    /// </summary>
+    /// <summary>更新选中操作</summary>
     void UpdateSelectNodeOperate(Node select)
     {
         if (select != null)
@@ -114,8 +79,8 @@ public class GUILayoutMultiSelectGroup
             else if (is_shift_click)
             {
                 ClearSelectedNodes();
-                
-                if(Group != null)
+
+                if (Group != null)
                 {
                     int begin = 0;
                     int end = 0;
@@ -143,9 +108,6 @@ public class GUILayoutMultiSelectGroup
         }
     }
 
-    /// <summary>
-    /// 
-    /// </summary>
     void SelectMultiNode(List<Node> nodes)
     {
         if (nodes == null || nodes.Count == 0)
@@ -155,9 +117,6 @@ public class GUILayoutMultiSelectGroup
             SelectNode(nodes[i]);
     }
 
-    /// <summary>
-    /// 
-    /// </summary>
     void SelectNode(Node node)
     {
         if (node != null && !SelectNodes.Contains(node))
@@ -167,9 +126,6 @@ public class GUILayoutMultiSelectGroup
         }
     }
 
-    /// <summary>
-    /// 
-    /// </summary>
     bool ToggleSelectNode(Node node)
     {
         if (node == null)
@@ -189,9 +145,6 @@ public class GUILayoutMultiSelectGroup
         return node.IsSelect;
     }
 
-    /// <summary>
-    /// 
-    /// </summary>
     void ClearSelectedNodes()
     {
         for (int i = 0; i < SelectNodes.Count; i++)
@@ -201,9 +154,6 @@ public class GUILayoutMultiSelectGroup
         SelectNodes.Clear();
     }
 
-    /// <summary>
-    /// 
-    /// </summary>
     public OperateResult Draw(float width, bool alwaysShowHorizontal = false, bool alwaysShowVertical = false)
     {
         scroll_ = GUILayout.BeginScrollView(scroll_, alwaysShowHorizontal, alwaysShowVertical);
@@ -211,7 +161,7 @@ public class GUILayoutMultiSelectGroup
         if (Group != null)
             result = Group.Draw(width);
         GUILayout.EndScrollView();
-       
+
         if (result != null)
             UpdateSelectNodeOperate(result.SelectNode);
         return result;

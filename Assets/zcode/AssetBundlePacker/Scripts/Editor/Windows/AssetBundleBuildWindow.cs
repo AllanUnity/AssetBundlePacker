@@ -1,22 +1,17 @@
-/***************************************************************
- * Copyright 2016 By Zhang Minglin
- * Author: Zhang Minglin
- * Create: 2016/01/20
- * Note  : AssetBundle打包配置窗口
-***************************************************************/
-using UnityEngine;
-using UnityEditor;
-using System.IO;
 using System;
 using System.Collections.Generic;
+using System.IO;
+using UnityEditor;
+using UnityEngine;
 
 namespace zcode.AssetBundlePacker
 {
+    /// <summary>AssetBundle打包配置窗口</summary>
     public class AssetBundleBuildWindow : EditorWindow
     {
-        /// <summary>
-        ///   打包方式
-        /// </summary>
+        /// <summary>界面单例</summary>
+        public static AssetBundleBuildWindow Instance = null;
+        /// <summary>打包方式</summary>
         enum emBuildType
         {
             StandaloneWindows,
@@ -24,19 +19,10 @@ namespace zcode.AssetBundlePacker
             IOS,
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
         class AssetNodeGroup : GUILayoutMultiSelectGroup.NodeGroup
         {
-            /// <summary>
-            /// 
-            /// </summary>
             public AssetNode Root;
 
-            /// <summary>
-            /// 
-            /// </summary>
             public override GUILayoutMultiSelectGroup.OperateResult Draw(float width)
             {
                 GUILayoutMultiSelectGroup.OperateResult result = null;
@@ -45,10 +31,6 @@ namespace zcode.AssetBundlePacker
 
                 return result;
             }
-
-            /// <summary>
-            /// 
-            /// </summary>
             public override List<GUILayoutMultiSelectGroup.Node> GetRange(int begin, int end)
             {
                 List<GUILayoutMultiSelectGroup.Node> temp = new List<GUILayoutMultiSelectGroup.Node>();
@@ -57,44 +39,27 @@ namespace zcode.AssetBundlePacker
             }
         }
 
-        /// <summary>
-        /// Asset节点
-        /// </summary>
+        /// <summary>Asset节点</summary>
         class AssetNode : GUILayoutMultiSelectGroup.Node
         {
-            /// <summary>
-            /// 数据
-            /// </summary>
+            /// <summary>数据</summary>
             public AssetBundleBuildData.AssetBuild.Element Element;
 
-            /// <summary>
-            /// 是否展开
-            /// </summary>
+            /// <summary>是否展开</summary>
             public bool Expand;
 
-            /// <summary>
-            ///   粒度
-            /// </summary>
+            /// <summary>粒度</summary>
             public int Granularity;
 
-            /// <summary>
-            /// 粒度详细信息
-            /// </summary>
+            /// <summary>粒度详细信息</summary>
             public string GranularityDetails;
 
-            /// <summary>
-            /// 父对象
-            /// </summary>
+            /// <summary>父对象</summary>
             public AssetNode Parent;
 
-            /// <summary>
-            /// 自身的子对象
-            /// </summary>
+            /// <summary>自身的子对象</summary>
             public List<AssetNode> Children = new List<AssetNode>();
 
-            /// <summary>
-            /// 
-            /// </summary>
             public int Build(AssetBundleBuildData.AssetBuild.Element elem, int index)
             {
                 if (elem == null)
@@ -118,9 +83,7 @@ namespace zcode.AssetBundlePacker
                 return index;
             }
 
-            /// <summary>
-            /// 选中指定ID区间展开的节点
-            /// </summary>
+            /// <summary>选中指定ID区间展开的节点</summary>
             public bool GetRange(ref List<GUILayoutMultiSelectGroup.Node> list, int begin, int end)
             {
                 //判断自身是否需要选中
@@ -144,9 +107,7 @@ namespace zcode.AssetBundlePacker
                 return false;
             }
 
-            /// <summary>
-            /// 渲染
-            /// </summary>
+            /// <summary>渲染</summary>
             public override GUILayoutMultiSelectGroup.OperateResult Draw(float width)
             {
                 return DrawAssetNode(this, width, 10);
@@ -182,9 +143,7 @@ namespace zcode.AssetBundlePacker
                 return result;
             }
 
-            /// <summary>
-            /// 渲染文件夹
-            /// </summary>
+            /// <summary>渲染文件夹</summary>
             static GUILayoutMultiSelectGroup.OperateResult DrawAssetNodeFolder(AssetNode tree, float width, int space)
             {
                 GUILayout.BeginHorizontal();
@@ -201,9 +160,7 @@ namespace zcode.AssetBundlePacker
                 return result;
             }
 
-            /// <summary>
-            /// 渲染文件
-            /// </summary>
+            /// <summary>渲染文件</summary>
             static GUILayoutMultiSelectGroup.OperateResult DrawAssetNodeFile(AssetNode tree, float width, int space)
             {
                 GUILayout.BeginHorizontal();
@@ -215,9 +172,7 @@ namespace zcode.AssetBundlePacker
             }
 
 
-            /// <summary>
-            /// 绘制节点内容
-            /// </summary>
+            /// <summary>绘制节点内容</summary>
             static GUILayoutMultiSelectGroup.OperateResult DrawAssetNodeContent(AssetNode tree, float width)
             {
                 EditorGUILayout.BeginHorizontal();
@@ -257,9 +212,7 @@ namespace zcode.AssetBundlePacker
                 return null;
             }
 
-            /// <summary>
-            /// 绘制资源标题
-            /// </summary>
+            /// <summary>绘制资源标题</summary>
             public static void DrawAssetTitle(float width)
             {
                 EditorGUILayout.BeginHorizontal();
@@ -276,52 +229,29 @@ namespace zcode.AssetBundlePacker
             }
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
+
         public const int ASSET_NODE_LAYER_SPACE = 10;
 
-        /// <summary>
-        ///  
-        /// </summary>
         private AssetBundleBuild asset_bundle_build_;
 
-        /// <summary>
-        /// 打包选项
-        /// </summary>
+        /// <summary>打包选项</summary>
         private BuildAssetBundleOptions build_option_ = BuildAssetBundleOptions.DeterministicAssetBundle;
 
-        /// <summary>
-        /// 
-        /// </summary>
         private GUILayoutMultiSelectGroup gui_multi_select_;
 
-        /// <summary>
-        ///   
-        /// </summary>
         private string selection_scene_ = null;
 
-        /// <summary>
-        /// 
-        /// </summary>
         private Vector2 scene_scroll_ = Vector2.zero;
 
-        /// <summary>
-        /// 资源打包起始路径
-        /// </summary>
+        /// <summary>资源打包起始路径</summary>
         string build_start_full_path_;
 
-        /// <summary>
-        /// 重新载入数据
-        /// </summary>
+        /// <summary>重新载入数据</summary>
         public void SyncConfigForm(ResourcesManifestData res)
         {
             asset_bundle_build_.SyncConfigFrom(res);
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
         void LoadData()
         {
             asset_bundle_build_ = new AssetBundleBuild();
@@ -385,9 +315,7 @@ namespace zcode.AssetBundlePacker
             }
         }
 
-        /// <summary>
-        /// 修改打包资源起始路径
-        /// </summary>
+        /// <summary>修改打包资源起始路径</summary>
         void ModifyAssetStartPath()
         {
             if (build_start_full_path_ == asset_bundle_build_.BuildStartFullPath)
@@ -439,9 +367,7 @@ namespace zcode.AssetBundlePacker
             }
         }
 
-        /// <summary>
-        ///  保存数据到文件中
-        /// </summary>
+        /// <summary>保存数据到文件中</summary>
         void SaveData()
         {
             EditorUtility.DisplayProgressBar("保存", "正在保存规则文件", 0);
@@ -452,9 +378,6 @@ namespace zcode.AssetBundlePacker
             EditorUtility.ClearProgressBar();
         }
 
-        /// <summary>
-        ///  
-        /// </summary>
         void Build()
         {
             AssetNodeGroup group = new AssetNodeGroup();
@@ -465,33 +388,25 @@ namespace zcode.AssetBundlePacker
             build_start_full_path_ = asset_bundle_build_.BuildStartFullPath;
         }
 
-        /// <summary>
-        /// 修改打包安装包配置
-        /// </summary>
+        /// <summary>修改打包安装包配置</summary>
         void ModifyPackNativeConfig(bool set)
         {
             asset_bundle_build_.Data.IsAllNative = set;
         }
 
-        /// <summary>
-        /// 修改压缩配置
-        /// </summary>
+        /// <summary>修改压缩配置</summary>
         void ModifyCompressConfig(bool set)
         {
             asset_bundle_build_.Data.IsAllCompress = set;
         }
 
-        /// <summary>
-        /// 刷新打包数据
-        /// </summary>
+        /// <summary>刷新打包数据</summary>
         void UpdateAssetBundleBuildData()
         {
 
         }
 
-        /// <summary>
-        /// 修改打包规则
-        /// </summary>
+        /// <summary>修改打包规则</summary>
         void ModifyRuleForSelectTreeNodes(emAssetBundleNameRule rule
             , bool is_compress, bool is_native, bool is_permanent, bool is_startup_load)
         {
@@ -509,9 +424,7 @@ namespace zcode.AssetBundlePacker
             }
         }
 
-        /// <summary>
-        /// 开启粒度加载
-        /// </summary>
+        /// <summary>开启粒度加载</summary>
         void LoadGranularityInfoAndDisplayProgress(bool show_details)
         {
             LoadGranularityInfo(show_details, (name, progress) =>
@@ -521,9 +434,7 @@ namespace zcode.AssetBundlePacker
             EditorUtility.ClearProgressBar();
         }
 
-        /// <summary>
-        ///   加载粒度信息
-        /// </summary>
+        /// <summary>加载粒度信息</summary>
         void LoadGranularityInfo(bool show_details, Action<string, float> progress_report)
         {
             Dictionary<string, string> granularity_details_table = null;
@@ -602,7 +513,7 @@ namespace zcode.AssetBundlePacker
                     else
                         granularity_table.Add(name, 1);
 
-                    if(granularity_details_table != null)
+                    if (granularity_details_table != null)
                     {
                         if (!granularity_details_table.ContainsKey(name))
                         {
@@ -633,15 +544,11 @@ namespace zcode.AssetBundlePacker
 
         }
 
-        /// <summary>
-        /// 刷新资源的粒度信息
-        /// </summary>
-        static void RefreshGranularity(Dictionary<string, int> table
-            , Dictionary<string, string> details
-            , string relative_path, AssetNode node
-            , Action<string> progress_report)
+        /// <summary>刷新资源的粒度信息</summary>
+        static void RefreshGranularity(Dictionary<string, int> table, Dictionary<string, string> details, string relative_path, AssetNode node, Action<string> progress_report)
         {
-            if (progress_report != null) { progress_report(relative_path); }
+            if (progress_report != null)
+                progress_report(relative_path);
             if (node.Element.IsFolder)
             {
                 if (node.Children.Count > 0)
@@ -667,9 +574,7 @@ namespace zcode.AssetBundlePacker
             }
         }
 
-        /// <summary>
-        /// 打包AssetBundle
-        /// </summary>
+        /// <summary>打包AssetBundle</summary>
         void BuildingAssetBundle(emBuildType build_type)
         {
             try
@@ -684,7 +589,7 @@ namespace zcode.AssetBundlePacker
                 if (running)
                     BuildAssetBundle.BuildAllAssetBundlesToTarget(asset_bundle_build_, GetBuildTargetType(build_type), build_option_);
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 Debug.LogError(ex.Message);
             }
@@ -693,9 +598,7 @@ namespace zcode.AssetBundlePacker
             EditorUtility.ClearProgressBar();
         }
 
-        /// <summary>
-        /// 打包目标平台
-        /// </summary>
+        /// <summary>打包目标平台</summary>
         BuildTarget GetBuildTargetType(emBuildType build_type)
         {
             if (build_type == emBuildType.StandaloneWindows)
@@ -708,9 +611,6 @@ namespace zcode.AssetBundlePacker
             return BuildTarget.StandaloneWindows;
         }
 
-        /// <summary>
-        ///   
-        /// </summary>
         static void SearchValidAsset(List<string> list, HashSet<string> invalid, ref HashSet<string> output)
         {
             foreach (var name in list)
@@ -739,9 +639,7 @@ namespace zcode.AssetBundlePacker
         }
 
         #region Draw
-        /// <summary>
-        /// 
-        /// </summary>
+
         void DrawGeneral()
         {
             GUILayout.BeginVertical(GUI.skin.FindStyle("flow background"), GUILayout.MaxHeight(80f));
@@ -815,15 +713,15 @@ namespace zcode.AssetBundlePacker
 
             GUILayout.EndVertical();
 
-            if(is_all_native != asset_bundle_build_.Data.IsAllNative)
+            if (is_all_native != asset_bundle_build_.Data.IsAllNative)
             {
                 ModifyPackNativeConfig(is_all_native);
             }
-            if(is_all_compress != asset_bundle_build_.Data.IsAllCompress)
+            if (is_all_compress != asset_bundle_build_.Data.IsAllCompress)
             {
                 ModifyCompressConfig(is_all_compress);
             }
-            if(is_show_granularity_details)
+            if (is_show_granularity_details)
             {
                 LoadGranularityInfoAndDisplayProgress(true);
             }
@@ -856,9 +754,6 @@ namespace zcode.AssetBundlePacker
             }
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
         void DrawAssets()
         {
             GUILayout.Space(3f);
@@ -874,8 +769,7 @@ namespace zcode.AssetBundlePacker
             bool is_native;
             bool is_permanent;
             bool is_startup_load;
-            bool is_modify_rule = DrawSelectAssetNodeInfo(out rule, out is_compress
-                , out is_native, out is_permanent, out is_startup_load);
+            bool is_modify_rule = DrawSelectAssetNodeInfo(out rule, out is_compress, out is_native, out is_permanent, out is_startup_load);
             GUILayout.EndVertical();
             GUILayout.EndHorizontal();
 
@@ -883,9 +777,6 @@ namespace zcode.AssetBundlePacker
                 ModifyRuleForSelectTreeNodes(rule, is_compress, is_native, is_permanent, is_startup_load);
         }
 
-        /// <summary>
-        ///   
-        /// </summary>
         void DrawScenes()
         {
             GUILayout.BeginHorizontal();
@@ -920,11 +811,8 @@ namespace zcode.AssetBundlePacker
             GUILayout.EndVertical();
         }
 
-        /// <summary>
-        /// 选中的树形节点信息
-        /// </summary>
-        bool DrawSelectAssetNodeInfo(out emAssetBundleNameRule rule
-            , out bool is_compress, out bool is_native, out bool is_permanent, out bool is_startup_load)
+        /// <summary>选中的树形节点信息</summary>
+        bool DrawSelectAssetNodeInfo(out emAssetBundleNameRule rule, out bool is_compress, out bool is_native, out bool is_permanent, out bool is_startup_load)
         {
             rule = emAssetBundleNameRule.None;
             is_compress = false;
@@ -955,8 +843,7 @@ namespace zcode.AssetBundlePacker
             bool is_native_op = is_native;
             bool is_permanent_op = is_permanent;
             bool is_startup_load_op = is_startup_load;
-            if (select_rule == emAssetBundleNameRule.SingleFile
-                || select_rule == emAssetBundleNameRule.Folder)
+            if (select_rule == emAssetBundleNameRule.SingleFile || select_rule == emAssetBundleNameRule.Folder)
             {
                 is_compress_op = GUILayoutHelper.Toggle(is_compress_op, "压缩", config.IsAllCompress);
                 is_native_op = GUILayoutHelper.Toggle(is_native_op, "打包到安装包", config.IsAllNative);
@@ -973,11 +860,7 @@ namespace zcode.AssetBundlePacker
 
             GUILayout.EndVertical();
 
-            if (select_rule != rule
-                || is_compress != is_compress_op
-                || is_native != is_native_op
-                || is_permanent != is_permanent_op
-                || is_startup_load != is_startup_load_op)
+            if (select_rule != rule || is_compress != is_compress_op || is_native != is_native_op || is_permanent != is_permanent_op || is_startup_load != is_startup_load_op)
             {
                 rule = select_rule;
                 is_compress = is_compress_op;
@@ -991,21 +874,14 @@ namespace zcode.AssetBundlePacker
         }
         #endregion
 
-        /// <summary>
-        /// 
-        /// </summary>
         void Awake()
         {
             LoadData();
-            
-        }
 
-        /// <summary>
-        ///   
-        /// </summary>
+        }
         void OnEnable()
         {
-            if(asset_bundle_build_ == null || gui_multi_select_ == null)
+            if (asset_bundle_build_ == null || gui_multi_select_ == null)
             {
                 LoadData();
             }
@@ -1013,17 +889,8 @@ namespace zcode.AssetBundlePacker
             Instance = this;
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        void Update()
-        {
-        }
+        void Update() { }
 
-
-        /// <summary>
-        ///   
-        /// </summary>
         void OnGUI()
         {
             if (GUILayoutHelper.DrawHeader("常规", "1", true, false))
@@ -1043,16 +910,11 @@ namespace zcode.AssetBundlePacker
         [MenuItem("AssetBundle/Windows/AssetBundle Build Window")]
         public static void Open()
         {
-            var win = EditorWindow.GetWindow<AssetBundleBuildWindow>("AssetBundle Build");
+            var win = EditorWindow.GetWindow<AssetBundleBuildWindow>("AB Build");
             if (win != null)
             {
                 win.Show();
             }
         }
-
-        /// <summary>
-        /// 界面单例
-        /// </summary>
-        public static AssetBundleBuildWindow Instance = null;
     }
 }

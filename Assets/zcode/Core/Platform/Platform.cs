@@ -1,11 +1,4 @@
-﻿/***************************************************************
- * Copyright 2016 By Zhang Minglin
- * Author: Zhang Minglin
- * Create: 2015/12/17 
- * Note  : 平台相关
-***************************************************************/
-using UnityEngine;
-using System.Collections;
+﻿using UnityEngine;
 
 namespace zcode
 {

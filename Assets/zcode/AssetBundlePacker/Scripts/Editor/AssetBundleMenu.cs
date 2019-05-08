@@ -1,22 +1,12 @@
-﻿/***************************************************************
- * Copyright 2016 By Zhang Minglin
- * Author: Zhang Minglin
- * Create: 2016/03/14
- * Note  : AssetBundle相关菜单项
-***************************************************************/
-using UnityEditor;
+﻿using UnityEditor;
 using UnityEngine;
-using System.Collections;
-using System.Collections.Generic;
-using System.IO;
-using System.Security.Cryptography;
 
 namespace zcode.AssetBundlePacker
 {
-    public class AssetBundleMenu : MonoBehaviour
+    /// <summary>AssetBundle相关菜单项</summary>
+    public class AssetBundleMenu 
     {
-        protected AssetBundleMenu()
-        { }
+        protected AssetBundleMenu() { }
 
         #region Step 1
         [MenuItem("AssetBundle/Step-1 打包AssetBundle", false, 51)]

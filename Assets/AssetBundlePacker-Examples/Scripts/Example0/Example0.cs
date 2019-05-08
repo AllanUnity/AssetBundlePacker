@@ -1,49 +1,19 @@
-﻿/***************************************************************
- * Copyright 2016 By Zhang Minglin
- * Author: Zhang Minglin
- * Create: 2016/12/19
- * Note  : 例子 - 展示插件启动、使用等功能
-***************************************************************/
-using UnityEngine;
-using System.Collections;
+﻿using System.Collections;
 using System.IO;
-using zcode.AssetBundlePacker;
+using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
+using zcode;
+using zcode.AssetBundlePacker;
 
-public class Example0 : MonoBehaviour 
+/// <summary>展示插件启动、使用等功能</summary>
+public class Example0 : MonoBehaviour
 {
-    /// <summary>
-    /// 缓存目录
-    /// </summary>
-    public const string PATH = "Assets/AssetBundlePacker-Examples/Cache/Version_1/AssetBundle";
-    
-    /// <summary>
-    /// 
-    /// </summary>
-    private int current_stage_ = 0;
+    /// <summary>缓存目录</summary>
+    //public const string PATH = "Assets/AssetBundlePacker-Examples/Cache/Version_1/AssetBundle";
+    public const string PATH = "Assets/PersistentAssets/AssetBundle";
 
-    /// <summary>
-    /// 
-    /// </summary>
-    private System.Action[] stage_funcs_;
-
-    /// <summary>
-    /// 
-    /// </summary>
-    void Awake()
-    {
-        stage_funcs_ = new System.Action[6];
-        stage_funcs_[0] = OnGUI_PreparationWork;
-        stage_funcs_[1] = OnGUI_Example;
-        stage_funcs_[2] = OnGUI_LoadTextFile;
-        stage_funcs_[3] = OnGUI_LoadTexture;
-        stage_funcs_[4] = OnGUI_LoadModel;
-        stage_funcs_[5] = OnGUI_LoadScene;
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
     void Start()
     {
         //此层次下的所有对象禁止被删除
@@ -54,223 +24,202 @@ public class Example0 : MonoBehaviour
         {
             GameObject.Destroy(this.gameObject);
         }
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    void OnGUI()
-    {
-        if (stage_funcs_[current_stage_] != null)
-            stage_funcs_[current_stage_]();
+        InitPreparationWork();
+        InitExample();
+        InitLoadAssets();
     }
 
     #region PreparationWork
+    public GameObject startPanel;
+    public Text showNoteText;
+    public Button startBtn;
+    public Button copyStartBtn;
     const string NOTE =
         "1. 启动例子会从缓存目录中拷贝例子数据至StreamingAssets目录，拷贝执行前会先清空StreamingAssets目录，请注意先转移此目录下的数据。\n"
-      + "2. 例子所有使用的AssetBundle原资源放置于\"Assets/AssetBundlePacker-Examples/Cache/Resources\"";
-    /// <summary>
-    /// 准备工作
-    /// </summary>
-    void OnGUI_PreparationWork()
+      + "2. 例子所有使用的AssetBundle原资源放置于\"" + PATH + "\"";
+    /// <summary>准备工作</summary>
+    void InitPreparationWork()
     {
-        if (GUI.Button(new Rect(0f, 0f, Screen.width, 40f), "从缓存目录中拷贝例子数据，并启动例子"))
+        showNoteText.text = NOTE;
+        startBtn.onClick.AddListener(() =>
         {
-            StartExample();
-        }
+            //设定资源加载模式为仅加载AssetBundle资源
+            ResourcesManager.LoadPattern = new AssetBundleLoadPattern();
+            //设定场景加载模式为仅加载AssetBundle资源
+            SceneResourcesManager.LoadPattern = new AssetBundleLoadPattern();
 
-        GUI.color = Color.yellow;
-        GUI.Label(new Rect(Screen.width / 2 - 100f, 60f, 100f, 20f), "注意");
-        GUI.Label(new Rect(0f, 80f, Screen.width, Screen.height - 80f), NOTE);
+            startPanel.SetActive(false);
+            ExamplePanel.SetActive(true);
+            StartCoroutine(LoadExample());
+        });
+
+        copyStartBtn.onClick.AddListener(() =>
+        {
+            if (Directory.Exists(Common.INITIAL_PATH))
+                Directory.Delete(Common.INITIAL_PATH, true);
+
+            //拷贝例子资源
+            FileHelper.CopyDirectoryAllChildren(PATH, Common.INITIAL_PATH);
+
+            //设定资源加载模式为仅加载AssetBundle资源
+            ResourcesManager.LoadPattern = new AssetBundleLoadPattern();
+            //设定场景加载模式为仅加载AssetBundle资源
+            SceneResourcesManager.LoadPattern = new AssetBundleLoadPattern();
+
+            startPanel.SetActive(false);
+            ExamplePanel.SetActive(true);
+            StartCoroutine(LoadExample());
+        });
     }
-
-    /// <summary>
-    /// 启动
-    /// </summary>
-    void StartExample()
+    IEnumerator LoadExample()
     {
-        if (Directory.Exists(zcode.AssetBundlePacker.Common.INITIAL_PATH))
-            Directory.Delete(zcode.AssetBundlePacker.Common.INITIAL_PATH, true);
-        //拷贝例子资源
-        zcode.FileHelper.CopyDirectoryAllChildren(PATH, zcode.AssetBundlePacker.Common.INITIAL_PATH);
-        //设定资源加载模式为仅加载AssetBundle资源
-        ResourcesManager.LoadPattern = new AssetBundleLoadPattern();
-        //设定场景加载模式为仅加载AssetBundle资源
-        SceneResourcesManager.LoadPattern = new AssetBundleLoadPattern();
-        
-        //切换到示例GUI阶段
-        current_stage_ = 1;
+        ExampleTipsText.gameObject.SetActive(true);
+        ExampleTipsText.text = "AssetBundlePacker is launching！";
+        yield return !AssetBundleManager.Instance.WaitForLaunch();
+        ExampleTipsText.text = "AssetBundlePacker is Over";
+        while (!AssetBundleManager.Instance.IsReady)
+        {
+            if (AssetBundleManager.Instance.IsFailed)
+            {
+                ExampleTipsText.text = "<color=red>AssetBundlePacker launch occur error!</color>";
+            }
+            yield return null;
+        }
+        ExampleTipsText.gameObject.SetActive(false);
+        btns.SetActive(true);
     }
     #endregion
 
     #region Example
-    /// <summary>
-    /// 
-    /// </summary>
-    void OnGUI_Example()
+    public GameObject ExamplePanel;
+    public GameObject btns;
+    public Button LoadTextBtn;
+    public Button LoadMeshBtn;
+    public Button LoadModelBtn;
+    public Button LoadSceneBtn;
+    public Text ExampleTipsText;
+    void InitExample()
     {
-        //AssetBundleManager全局单例实例化后会自动启动，此处等待其启动完毕
-        if (!AssetBundleManager.Instance.WaitForLaunch())
-        {
-            GUI.Label(new Rect(0f, 0f, 200f, 20f), "AssetBundlePacker is launching！");
-            return;
-        }
-
-       
-        if(AssetBundleManager.Instance.IsReady)
-        { 
-            //启动成功
-            GUI.Label(new Rect(0f, 0f, Screen.width, 20f), "AssetBundlePacker launch succeed, Version is" + AssetBundleManager.Instance.strVersion);
-
-            bool load_text = GUI.Button(new Rect(0f, 30f, 300f, 30f), "例子 - 加载文本资源");
-            bool load_tex = GUI.Button(new Rect(0f, 60f, 300f, 30f), "例子 - 加载纹理资源");
-            bool load_model = GUI.Button(new Rect(0f, 90f, 300f, 30f), "例子 - 加载模型资源");
-            bool load_scene = GUI.Button(new Rect(0f, 120f, 300f, 30f), "例子 - 加载场景资源");
-            if (load_text)
-                current_stage_ = 2;
-            if (load_tex)
-                current_stage_ = 3;
-            if (load_model)
-                current_stage_ = 4;
-            if (load_scene)
-                current_stage_ = 5;
-        }
-        else if(AssetBundleManager.Instance.IsFailed)
-        {
-            //启动失败
-            GUI.color = Color.red;
-            GUI.Label(new Rect(0f, 0f, 200f, 20f), "AssetBundlePacker launch occur error!");
-        }
+        LoadTextBtn.onClick.AddListener(LoadText);
+        LoadMeshBtn.onClick.AddListener(LoadTexture);
+        LoadModelBtn.onClick.AddListener(LoadModel);
+        LoadSceneBtn.onClick.AddListener(LoadScene);
     }
-    #endregion
 
-    #region Load Text File
     const string TEXT_FILE = "Assets/Resources/Version_1/Text/Text.txt";
-    string text_content_ = null;
-    /// <summary>
-    /// 
-    /// </summary>
-    void LoadTextFile()
+    void LoadText()
     {
         TextAsset text_asset = ResourcesManager.Load<TextAsset>(TEXT_FILE);
+
         if (text_asset != null)
         {
-            text_content_ = text_asset.text;
+            SetShowText(text_asset.text);
         }
+
+        OpenContentPanel("文本(" + TEXT_FILE + ")", () =>
+        {
+            SetShowText(null);
+        });
     }
 
-    /// <summary>
-    /// 
-    /// </summary>
-    void OnGUI_LoadTextFile()
-    {
-        if (GUI.Button(new Rect(0f, 0f, Screen.width, 30f), "加载并显示文本资源(" + TEXT_FILE + ")"))
-        {
-            LoadTextFile();
-        }
-        if (GUI.Button(new Rect(0f, 30f, Screen.width, 30f), "返回"))
-        {
-            current_stage_ = 1;
-            text_content_ = null;
-        }
-
-        if (!string.IsNullOrEmpty(text_content_))
-        {
-            GUI.Label(new Rect(0f, 100f, Screen.width, 60f), text_content_);
-        }
-    }
-    #endregion
-
-    #region Load Texture
     const string TEXTURE_FILE = "Assets/Resources/Version_1/Texture/Tex_1.png";
-    Texture2D texture_ = null;
-    /// <summary>
-    /// 
-    /// </summary>
     void LoadTexture()
     {
-        texture_ = ResourcesManager.Load<Texture2D>(TEXTURE_FILE);
-    }
-    /// <summary>
-    /// 
-    /// </summary>
-    void OnGUI_LoadTexture()
-    {
-        if (GUI.Button(new Rect(0f, 0f, Screen.width, 30f), "加载并显示纹理资源(" + TEXTURE_FILE + ")"))
-        {
-            LoadTexture();
-        }
-        if (GUI.Button(new Rect(0f, 30f, Screen.width, 30f), "返回"))
-        {
-            current_stage_ = 1;
-            texture_ = null;
-        }
-
+        Texture texture_ = ResourcesManager.Load<Texture2D>(TEXTURE_FILE);
         if (texture_ != null)
         {
-            GUI.DrawTexture(new Rect(0f, 100f, Screen.width, 60f), texture_);
+            SetShowTexture(texture_);
         }
-    }
-    #endregion
 
-    #region Load Model
+        OpenContentPanel("纹理(" + TEXTURE_FILE + ")", () =>
+        {
+            SetShowTexture(null);
+        });
+    }
+
     const string MODEL_FILE = "Assets/Resources/Version_1/Models/Sphere/Sphere.Prefab";
-    GameObject model_;
-    /// <summary>
-    /// 
-    /// </summary>
     void LoadModel()
     {
+        GameObject model_ = null;
         GameObject prefab = ResourcesManager.Load<GameObject>(MODEL_FILE);
-        if(prefab != null)
+        if (prefab != null)
         {
             model_ = GameObject.Instantiate(prefab);
             model_.transform.position = Vector3.zero;
         }
-    }
-    /// <summary>
-    /// 
-    /// </summary>
-    void OnGUI_LoadModel()
-    {
-        if (GUI.Button(new Rect(0f, 0f, Screen.width, 30f), "加载并显示模型资源(" + MODEL_FILE + ")"))
+
+        OpenContentPanel("模型(" + MODEL_FILE + ")", () =>
         {
-            LoadModel();
-        }
-        if (GUI.Button(new Rect(0f, 30f, Screen.width, 30f), "返回"))
-        {
-            current_stage_ = 1;
-            if(model_ != null)
+            if (model_ != null)
                 GameObject.Destroy(model_);
-        }        
+        });
+    }
+
+    const string SCENE_FILE = "SimpleScene";
+    void LoadScene()
+    {
+        string original_scene = SceneManager.GetActiveScene().name;
+        original_scene = SceneManager.GetActiveScene().name;
+        SceneResourcesManager.LoadSceneAsync(SCENE_FILE);
+
+        OpenContentPanel("场景(" + SCENE_FILE + ")", () =>
+        {
+            SceneManager.LoadScene(original_scene);
+        });
     }
     #endregion
 
-    #region Load Scene
-    const string SCENE_FILE = "SimpleScene";
-    string original_scene;
-    /// <summary>
-    /// 
-    /// </summary>
-    void LoadScene()
+    #region LoadAssets
+    public GameObject contentPanel;
+    public Text LoadAssetsName;
+    public Text showText;
+    public RawImage showTexture;
+    public Button BackBtn;
+    public UnityAction backAction;
+    void InitLoadAssets()
     {
-        original_scene = SceneManager.GetActiveScene().name;
-        SceneResourcesManager.LoadSceneAsync(SCENE_FILE);
+        showText.gameObject.SetActive(false);
+        showTexture.gameObject.SetActive(false);
+        BackBtn.onClick.AddListener(() =>
+        {
+            if (backAction != null) backAction();
+            contentPanel.SetActive(false);
+
+        });
     }
-    /// <summary>
-    /// 
-    /// </summary>
-    void OnGUI_LoadScene()
+    void OpenContentPanel(string loadassetsname, UnityAction back)
     {
-        if (GUI.Button(new Rect(0f, 0f, Screen.width, 30f), "加载并切换场景(" + SCENE_FILE + ")"))
+        contentPanel.SetActive(true);
+        LoadAssetsName.text = loadassetsname;
+        backAction = back;
+    }
+
+    void SetShowText(string content)
+    {
+        if (string.IsNullOrEmpty(content))
         {
-            LoadScene();
+            showText.text = null;
+            showText.gameObject.SetActive(false);
         }
-        if (GUI.Button(new Rect(0f, 30f, Screen.width, 30f), "返回"))
+        else
         {
-            current_stage_ = 1;
-            SceneManager.LoadScene(original_scene);
+            showText.gameObject.SetActive(true);
+            showText.text = content;
         }
     }
+    void SetShowTexture(Texture content)
+    {
+        if (content == null)
+        {
+            showTexture.texture = null;
+            showTexture.gameObject.SetActive(false);
+        }
+        else
+        {
+            showTexture.gameObject.SetActive(true);
+            showTexture.texture = content;
+        }
+    }
+
     #endregion
 }

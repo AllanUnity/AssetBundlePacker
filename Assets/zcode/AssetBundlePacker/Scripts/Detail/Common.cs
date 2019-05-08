@@ -1,21 +1,13 @@
-﻿/***************************************************************
- * Copyright 2016 By Zhang Minglin
- * Author: Zhang Minglin
- * Create: 2016/01/18 15:21:08
- * Note  : AssetBundle相关公共定义
-***************************************************************/
-using UnityEngine;
-using System.Collections;
-using System.Collections.Generic;
-using System.IO;
+﻿using UnityEngine;
 
 namespace zcode.AssetBundlePacker
 {
+    /// <summary>
+    /// AssetBundle相关公共定义
+    /// </summary>
     public static class Common
     {
-        /// <summary>
-        ///   AssetBundle后缀名
-        /// </summary>
+        /// <summary>AssetBundle后缀名</summary>
         public const string EXTENSION = "_ab";
 
         /// <summary>
@@ -23,14 +15,10 @@ namespace zcode.AssetBundlePacker
         /// </summary>
         public const string NATIVE_MANIFEST_EXTENSION = ".manifest";
 
-        /// <summary>
-        /// 资源所在根文件夹名
-        /// </summary>
+        /// <summary>资源所在根文件夹名</summary>
         public const string ROOT_FOLDER_NAME = "AssetBundle";
 
-        /// <summary>
-        /// 项目资源根路径名称
-        /// </summary>
+        /// <summary>项目资源根路径名称</summary>
         public const string PROJECT_ASSET_ROOT_NAME = "Assets";
 
         /// <summary>
@@ -81,7 +69,7 @@ namespace zcode.AssetBundlePacker
         /// 配置文件名
         /// 此数组是插件所使用的所有的配置文件名
         /// </summary>
-        public static readonly string[] CONFIG_NAME_ARRAY = 
+        public static readonly string[] CONFIG_NAME_ARRAY =
         {
             MAIN_MANIFEST_FILE_NAME,
             RESOURCES_MANIFEST_FILE_NAME,
