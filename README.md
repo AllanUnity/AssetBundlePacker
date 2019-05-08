@@ -1,4 +1,4 @@
-# zcode-AssetBundlePacker
+# AssetBundlePacker
 Unity的AssetBundle模块扩展插件，主要目的用于简化AssetBundle打包，提供AssetBundle管理，支持热更新、支持资源包下载等。
 
 ## 主要功能
@@ -11,7 +11,7 @@ Unity的AssetBundle模块扩展插件，主要目的用于简化AssetBundle打�
 * 提供资源加载器与场景加载器，可提供多种加载配置（AssetBundle、Resources、AssetBundleAndResources）。
 
 ## 版本信息
-	Unity: 5.3.1f1
+	Unity: 2017.4.10f1
 
 ## 第三方库
 	Json:  https://github.com/xtqqksszml/simple-json
