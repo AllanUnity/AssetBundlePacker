@@ -1,15 +1,10 @@
-﻿/***************************************************************
- * Copyright 2016 By Zhang Minglin
- * Author: Zhang Minglin
- * Create: 2016/12/23
- * Note  : 例子 - 如何使用Updater更新器
-***************************************************************/
-using UnityEngine;
-using System.Collections;
+﻿using GS;
+using GS.AssetBundlePacker;
 using System.Collections.Generic;
 using System.IO;
-using zcode.AssetBundlePacker;
+using UnityEngine;
 
+/// <summary>例子 - 如何使用Updater更新器</summary>
 public class Example1 : MonoBehaviour 
 {
     /// <summary>
@@ -75,12 +70,12 @@ public class Example1 : MonoBehaviour
     /// </summary>
     void StartExample()
     {
-        if (Directory.Exists(zcode.AssetBundlePacker.Common.PATH))
-            Directory.Delete(zcode.AssetBundlePacker.Common.PATH, true);
-        if (Directory.Exists(zcode.AssetBundlePacker.Common.INITIAL_PATH))
-            Directory.Delete(zcode.AssetBundlePacker.Common.INITIAL_PATH, true);
+        if (Directory.Exists(Common.PATH))
+            Directory.Delete(Common.PATH, true);
+        if (Directory.Exists(Common.INITIAL_PATH))
+            Directory.Delete(Common.INITIAL_PATH, true);
         //拷贝例子资源
-        zcode.FileHelper.CopyDirectoryAllChildren(PATH, zcode.AssetBundlePacker.Common.INITIAL_PATH);
+        FileHelper.CopyDirectoryAllChildren(PATH, Common.INITIAL_PATH);
         //设定资源加载模式为仅加载AssetBundle资源
         ResourcesManager.LoadPattern = new AssetBundleLoadPattern();
         //设定场景加载模式为仅加载AssetBundle资源

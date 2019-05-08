@@ -1,11 +1,11 @@
-﻿using System.Collections;
+﻿using GS;
+using GS.AssetBundlePacker;
+using System.Collections;
 using System.IO;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
-using zcode;
-using zcode.AssetBundlePacker;
 
 /// <summary>展示插件启动、使用等功能</summary>
 public class Example0 : MonoBehaviour
