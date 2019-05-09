@@ -48,15 +48,14 @@ namespace GS.AssetBundlePacker
             return result;
         }
 
-        /// <summary>卸载一个资源(非GameObject)</summary>
-        public static void Unload(string asset)
+#if UNITY_EDITOR
+        /// <summary>加载一个Resources下资源</summary>
+        /// <param name="asset">资源局部路径（"Assets/..."）</param>
+        private static T LoadAssetAtPath<T>(string asset) where T : Object
         {
-            if (LoadPattern.ResourcesLoadPattern == emLoadPattern.AssetBundle || LoadPattern.ResourcesLoadPattern == emLoadPattern.All)
-            {
-                AssetBundleManager.Instance.UnloadAsset(asset);
-            }
+            return UnityEditor.AssetDatabase.LoadAssetAtPath<T>(asset);
         }
-
+#endif
         /// <summary>加载一个Resources下资源</summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="asset">资源局部路径（"Assets/..."）</param>
@@ -69,6 +68,15 @@ namespace GS.AssetBundlePacker
             asset = FileHelper.AbsoluteToRelativePath(RESOURCES_LOCAL_DIRECTORY, asset);
             T a = Resources.Load<T>(asset);
             return a;
+        }
+
+        /// <summary>卸载一个资源(非GameObject)</summary>
+        public static void Unload(string asset)
+        {
+            if (LoadPattern.ResourcesLoadPattern == emLoadPattern.AssetBundle || LoadPattern.ResourcesLoadPattern == emLoadPattern.All)
+            {
+                AssetBundleManager.Instance.UnloadAsset(asset);
+            }
         }
 
         /// <summary>文本文件加载</summary>
@@ -91,7 +99,6 @@ namespace GS.AssetBundlePacker
 
             return null;
         }
-
         /// <summary>二进制文件加载</summary>
         /// <param name="file_name">全局路径</param>
         public static byte[] LoadByteFile(string file_name)
@@ -111,14 +118,5 @@ namespace GS.AssetBundlePacker
 
             return null;
         }
-
-#if UNITY_EDITOR
-        /// <summary>加载一个Resources下资源</summary>
-        /// <param name="asset">资源局部路径（"Assets/..."）</param>
-        public static T LoadAssetAtPath<T>(string asset) where T : Object
-        {
-            return UnityEditor.AssetDatabase.LoadAssetAtPath<T>(asset);
-        }
-#endif
     }
 }

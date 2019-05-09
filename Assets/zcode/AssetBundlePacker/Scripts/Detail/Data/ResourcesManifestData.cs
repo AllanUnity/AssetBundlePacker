@@ -59,16 +59,12 @@ namespace GS.AssetBundlePacker
         /// <summary>资源清单</summary>
         public ResourcesManifestData Data;
 
-        /// <summary>
-        ///   资源查询表
-        ///   Key： Asset
+        /// <summary>资源查询表Key： Asset
         ///   Value： AssetBundleName's list
         /// </summary>
         public Dictionary<string, List<string>> AssetTable;
 
-        /// <summary>
-        ///   场景查询表(场景强制打包为一个AssetBundle)
-        ///   Key： SceneLevelName
+        /// <summary>场景查询表(场景强制打包为一个AssetBundle)Key： SceneLevelName
         ///   Value： AssetBundleName
         /// </summary>
         public Dictionary<string, string> SceneTable;
@@ -77,7 +73,6 @@ namespace GS.AssetBundlePacker
         {
             Data = new ResourcesManifestData();
         }
-
 
         public bool Load(string file_name)
         {
@@ -99,7 +94,7 @@ namespace GS.AssetBundlePacker
             SceneTable = new Dictionary<string, string>();
             if (Data.AssetBundles != null)
             {
-                var itr = Data.AssetBundles.Values.GetEnumerator();
+                var itr = Data.AssetBundles.Values.GetEnumerator();//按照Key值去遍历
                 while (itr.MoveNext())
                 {
                     List<string> list = itr.Current.Assets;

@@ -26,7 +26,7 @@ namespace GS.AssetBundlePacker
         ///   初始路径
         ///   此路径为安装包中的AssetBundlePacker所携带的资源和配置文件路径
         /// </summary>
-        public static readonly string INITIAL_PATH = Platform.StreamingAssetsPaht + "/" + ROOT_FOLDER_NAME;
+        public static readonly string INITIAL_PATH = Platform.StreamingAssetsPath + "/" + ROOT_FOLDER_NAME;
 
         /// <summary>
         ///   缓存路径

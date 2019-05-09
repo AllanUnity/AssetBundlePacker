@@ -59,10 +59,10 @@ namespace GS.AssetBundlePacker
 
         #region MonoBahaviour
 
-        protected override void Init()
+        protected override void Init(DelegateMonoSlingletonCreateCallBack cb)
         {
-            base.Init();
-            Launch();
+            base.Init(cb);
+            Launch(cb);
         }
 
         void OnDestroy()
@@ -73,7 +73,7 @@ namespace GS.AssetBundlePacker
 
         #region 启动
         /// <summary>启动(仅内部启用)</summary>
-        void Launch()
+        void Launch(DelegateMonoSlingletonCreateCallBack cb)
         {
             if (assetbundle_permanent_ == null)
             {
@@ -98,7 +98,7 @@ namespace GS.AssetBundlePacker
             if (IsPlatformSupport)
             {
                 StopAllCoroutines();
-                StartCoroutine(Preprocess());
+                StartCoroutine(Preprocess(cb));
             }
             else
             {
@@ -109,7 +109,7 @@ namespace GS.AssetBundlePacker
         private PreprocessInformation preprocessInformation { get; set; }
 
         /// <summary>初始化</summary>
-        private IEnumerator Preprocess()
+        private IEnumerator Preprocess(DelegateMonoSlingletonCreateCallBack cb)
         {
             preprocessInformation = new PreprocessInformation();
 
@@ -146,13 +146,18 @@ namespace GS.AssetBundlePacker
             preprocessInformation.UpdateState(IsFailed ? emPreprocessState.Failed : emPreprocessState.Completed);
             yield return PreprocessFinished();
 
+            if (cb != null)
+            {
+                cb(IsReady && !IsFailed);
+            }
+
             preprocessInformation = null;
         }
 
         /// <summary>初始化 - 安装包资源初始化</summary>
         IEnumerator PreProcessInstallNativeAssets()
         {
-            Debug.Log("AssetBundleManager 安装包资源初始化");
+            Debug.LogError("AssetBundleManager 安装包资源初始化");
             if (ErrorCode != emErrorCode.None)
                 yield break;
 
@@ -162,13 +167,16 @@ namespace GS.AssetBundlePacker
 
             List<string> copyFileList = new List<string>(512);
 
-            // 拷贝安装包中的ResourcesManifest至缓存目录
+
+            // 拷贝安装包中的ResourcesManifest至缓存目录----ResourcesManifest.cfg
             yield return StartCopyInitialFileToCache(Common.RESOURCES_MANIFEST_FILE_NAME);
             if (IsFailed)
                 yield break;
 
-            //加载缓存目录中的ResourcesManifest
+            // 加载缓存目录中的ResourcesManifest
+            // Assets/PersistentAssets/AssetBundle/Cache/ResourcesManifest.cfg
             string res_manifest_cache_name = Common.GetCacheFileFullName(Common.RESOURCES_MANIFEST_FILE_NAME);
+            // 载入ResourcesManifest数据
             ResourcesManifest newResManifest = Common.LoadResourcesManifestByPath(res_manifest_cache_name);
             if (newResManifest != null)
             {
@@ -208,12 +216,11 @@ namespace GS.AssetBundlePacker
             }
 
             preprocessInformation.UpdateProgress(0f, 1f);
-
+            // 载入ResourcesMnifest
             ResourcesManifest res_manifest = Common.LoadResourcesManifest();
             if (res_manifest == null)
             {
-                Error(emErrorCode.LoadResourcesManifestFailed
-                    , "Can't load ResourcesManifest file!");
+                Error(emErrorCode.LoadResourcesManifestFailed, "Can't load ResourcesManifest file!");
                 yield break;
             }
 
@@ -225,19 +232,24 @@ namespace GS.AssetBundlePacker
             }
 
             //加载缓存目录中的ResourcesManifest
+            // Assets/PersistentAssets/AssetBundle/Cache/ResourcesManifest.cfg
             string res_manifest_cache_name = Common.GetCacheFileFullName(Common.RESOURCES_MANIFEST_FILE_NAME);
+            // 载入ResourcesManifest数据
             ResourcesManifest new_res_manifest = Common.LoadResourcesManifestByPath(res_manifest_cache_name);
             if (new_res_manifest == null)
             {
-                Error(emErrorCode.LoadResourcesManifestFailed
-                    , "Can't load ResourcesManifest cache file!");
+                Error(emErrorCode.LoadResourcesManifestFailed, "Can't load ResourcesManifest cache file!");
                 yield break;
             }
 
             List<string> copyFileList = new List<string>();
             List<string> delete_files = new List<string>();
+
+            Debug.Log("<color=yellow>暂时没有更新数据,先测试无更新</color>");
             if (CompareVersion(res_manifest.Data.strVersion, new_res_manifest.Data.strVersion) < 0)
-            {// 安装包的资源有更新
+            {
+                //-------------------------------
+                // 安装包的资源有更新
                 AssetBundleManifest main_manifest = Common.LoadMainManifest();
 
                 // 拷贝安装包中的AssetBundle.manifest
@@ -402,7 +414,6 @@ namespace GS.AssetBundlePacker
                 ResManifest = null;
                 ResPackages = null;
             }
-
             //删除缓存目录
             if (Directory.Exists(Common.CACHE_PATH))
                 Directory.Delete(Common.CACHE_PATH, true);
@@ -477,7 +488,7 @@ namespace GS.AssetBundlePacker
                 return false;
 
             ShutDown();
-            Launch();
+            Launch(null);
 
             return true;
         }
@@ -726,9 +737,14 @@ namespace GS.AssetBundlePacker
         #endregion
 
         #region Private Function
+        /// <summary>启动批量复制初始文件到本机</summary>
+        /// <param name="files"></param>
+        /// <param name="callback"></param>
+        /// <returns></returns>
         private IEnumerator StartBatchCopyInitialFileToNative(List<string> files, System.Action<AssetBundleBatchCopy> callback)
         {
             AssetBundleBatchCopy batchCopy = AssetBundleBatchCopy.Create();
+            // 拷贝所有文件
             yield return batchCopy.StartBatchCopy(files, callback);
             if (batchCopy.resultCode != emIOOperateCode.Succeed)
             {
@@ -1177,7 +1193,12 @@ namespace GS.AssetBundlePacker
         IEnumerator StartCopyInitialFileToCache(string local_name)
         {
             StreamingAssetsCopy copy = new StreamingAssetsCopy();
-            yield return copy.Copy(Common.GetInitialFileFullName(local_name), Common.GetCacheFileFullName(local_name));
+            //Assets/StreamingAssets/AssetBundle/ + local_name
+            string InitialLocalPath = Common.GetInitialFileFullName(local_name);
+            //Assets/PersistentAssets/AssetBundle/Cache/ + local_name
+            string CacheLocalPath = Common.GetCacheFileFullName(local_name);
+
+            yield return copy.Copy(InitialLocalPath, CacheLocalPath);
             if (copy.resultCode != emIOOperateCode.Succeed)
             {
                 var message = local_name;

@@ -6,7 +6,7 @@ namespace GS
     public static class Platform
     {
 #if UNITY_EDITOR 
-        public static string StreamingAssetsPaht = Application.streamingAssetsPath;
+        public static string StreamingAssetsPath = Application.streamingAssetsPath;
         public static string PersistentAssetsPath = Application.dataPath + "/PersistentAssets";
         public static string CacheCurrentDirectoryPath = System.IO.Directory.GetCurrentDirectory();
 #elif UNITY_STANDALONE_WIN

@@ -40,7 +40,7 @@ namespace GS.AssetBundlePacker
             int current = 0;
             while (current < files.Count || copy_list_.Count > 0)
             {
-                if(isDone)
+                if (isDone)
                 {
                     StopAllCoroutines();
                     break;
@@ -66,16 +66,23 @@ namespace GS.AssetBundlePacker
 
             copy_list_.Add(local_name);
             StreamingAssetsCopy copy = new StreamingAssetsCopy();
-            yield return copy.Copy(Common.GetInitialFileFullName(local_name),
-                Common.GetFileFullName(local_name));
+
+            //资源原始全局路径
+            // Assets/StreamingAssets/AssetBundle/ + local_name
+            string initial_Local_Name = Common.GetInitialFileFullName(local_name);
+            //资源全局路径
+            // Assets/PersistentAssets/AssetBundle/ + local_name
+            string fileFull_Local_Name = Common.GetFileFullName(local_name);
+
+            yield return copy.Copy(initial_Local_Name, fileFull_Local_Name);
             copy_list_.Remove(local_name);
             ++progress;
 
-            if (callback != null) { callback(this); }
-            if(copy.resultCode != emIOOperateCode.Succeed)
-            {
+            if (callback != null)
+                callback(this);
+
+            if (copy.resultCode != emIOOperateCode.Succeed)
                 SetResult(true, copy.resultCode);
-            }
         }
 
         void SetResult(bool isDone, emIOOperateCode result)
