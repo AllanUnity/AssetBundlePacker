@@ -45,78 +45,44 @@ namespace GS.AssetBundlePacker
             { 0f, 1f},              // Abort
         };
 
-        /// <summary>
-        ///   UpdateEvent
-        /// </summary>
+        /// <summary>UpdateEvent</summary>
         public event System.Action<Updater> OnUpdate;
 
-        /// <summary>
-        ///   DoneEvent
-        /// </summary>
+        /// <summary>DoneEvent</summary>
         public event System.Action<Updater> OnDone;
 
-        /// <summary>
-        ///   是否结束
-        /// </summary>
+        /// <summary>是否结束</summary>
         public bool IsDone { get; private set; }
 
-        /// <summary>
-        ///   是否出错
-        /// </summary>
-        public bool IsFailed
-        {
-            get { return ErrorCode != emErrorCode.None; }
-        }
+        /// <summary>是否出错</summary>
+        public bool IsFailed { get { return ErrorCode != emErrorCode.None; } }
 
-        /// <summary>
-        ///   错误代码
-        /// </summary>
+        /// <summary>错误代码</summary>
         public emErrorCode ErrorCode { get; private set; }
 
-        /// <summary>
-        ///   当前状态
-        /// </summary>
+        /// <summary>当前状态</summary>
         public emState CurrentState { get; private set; }
 
-        /// <summary>
-        ///   当前的完成的进度[0f, 1f]
-        /// </summary>
+        /// <summary>当前的完成的进度[0f, 1f]</summary>
         public float CurrentProgress { get; private set; }
 
-        /// <summary>
-        /// 下载地址列表
-        /// </summary>
+        /// <summary>下载地址列表</summary>
         private List<string> url_group_;
 
-        /// <summary>
-        ///   当前可用的下载地址
-        /// </summary>
+        /// <summary>当前可用的下载地址</summary>
         private string current_url_;
 
-        /// <summary>
-        ///   
-        /// </summary>
         private URLVerifier verifier_;
 
-        /// <summary>
-        ///   文件下载器
-        /// </summary>
+        /// <summary>文件下载器</summary>
         private FileDownload file_download_;
 
-        /// <summary>
-        ///   资源下载器
-        /// </summary>
+        /// <summary>资源下载器</summary>
         private AssetBundleDownloader ab_download_;
 
-        /// <summary>
-        /// 
-        /// </summary>
-        protected Updater()
-        { }
+        protected Updater() { }
 
-        /// <summary>
-        ///   开始更新
-        /// </summary>
+        /// <summary>开始更新</summary>
         public bool StartUpdate(string url)
         {
             if (!AssetBundleManager.Instance.IsReady)
@@ -129,9 +95,7 @@ namespace GS.AssetBundlePacker
             return StartUpdate(url_group);
         }
 
-        /// <summary>
-        ///   开始更新
-        /// </summary>
+        /// <summary>开始更新</summary>
         public bool StartUpdate(List<string> url_group)
         {
             if (!AssetBundleManager.Instance.IsReady)
@@ -155,9 +119,7 @@ namespace GS.AssetBundlePacker
             return true;
         }
 
-        /// <summary>
-        /// 重新开始更新
-        /// </summary>
+        /// <summary>重新开始更新</summary>
         public bool RestartUpdate()
         {
             if (!IsDone)
@@ -169,9 +131,7 @@ namespace GS.AssetBundlePacker
             return StartUpdate(url_group_);
         }
 
-        /// <summary>
-        ///   取消更新
-        /// </summary>
+        /// <summary>取消更新</summary>
         public void CancelUpdate()
         {
             StopAllCoroutines();
@@ -198,9 +158,6 @@ namespace GS.AssetBundlePacker
             Done();
         }
 
-        /// <summary>
-        ///   
-        /// </summary>
         public void AbortUpdate()
         {
             StopAllCoroutines();
@@ -227,9 +184,7 @@ namespace GS.AssetBundlePacker
             Done();
         }
 
-        /// <summary>
-        ///   更新
-        /// </summary>
+        /// <summary>更新</summary>
         IEnumerator Updating()
         {
             UpdateState(emState.Initialize);
@@ -249,9 +204,7 @@ namespace GS.AssetBundlePacker
             Done();
         }
 
-        /// <summary>
-        ///   初始化更新器
-        /// </summary>
+        /// <summary>初始化更新器</summary>
         IEnumerator UpdatingInitialize()
         {
             if (ErrorCode != emErrorCode.None)
@@ -267,9 +220,7 @@ namespace GS.AssetBundlePacker
             yield return null;
         }
 
-        /// <summary>
-        ///   开始进行资源URL检测
-        /// </summary>
+        /// <summary>开始进行资源URL检测</summary>
         IEnumerator UpdatingVerifyURL()
         {
             if (ErrorCode != emErrorCode.None)
@@ -298,9 +249,7 @@ namespace GS.AssetBundlePacker
             yield return null;
         }
 
-        /// <summary>
-        ///   开始进行主要文件下载,下载至缓存目录
-        /// </summary>
+        /// <summary>开始进行主要文件下载,下载至缓存目录</summary>
         IEnumerator UpdatingDownloadAllConfig()
         {
             if (ErrorCode != emErrorCode.None)
@@ -321,8 +270,7 @@ namespace GS.AssetBundlePacker
                 {
                     if (Common.CONFIG_REQUIRE_CONDITION_ARRAY[i])
                     {
-                        Error(emErrorCode.DownloadMainConfigFileFailed
-                        , Common.CONFIG_NAME_ARRAY[i] + " download failed!");
+                        Error(emErrorCode.DownloadMainConfigFileFailed, Common.CONFIG_NAME_ARRAY[i] + " download failed!");
                         yield break;
                     }
 
@@ -339,9 +287,7 @@ namespace GS.AssetBundlePacker
             yield return null;
         }
 
-        /// <summary>
-        ///   更新AssetBundle
-        /// </summary>
+        /// <summary>更新AssetBundle</summary>
         IEnumerator UpdatingUpdateAssetBundle()
         {
             if (ErrorCode != emErrorCode.None)
@@ -355,8 +301,7 @@ namespace GS.AssetBundlePacker
             ResourcesManifest new_resources_manifest = Common.LoadResourcesManifestByPath(file);
             if (new_resources_manifest == null)
             {
-                Error(emErrorCode.LoadNewResourcesManiFestFailed
-                    , "Can't load new verion ResourcesManifest!");
+                Error(emErrorCode.LoadNewResourcesManiFestFailed, "Can't load new verion ResourcesManifest!");
                 yield break;
             }
 
@@ -366,8 +311,7 @@ namespace GS.AssetBundlePacker
             AssetBundleManifest new_manifest = Common.LoadMainManifestByPath(file);
             if (new_manifest == null)
             {
-                Error(emErrorCode.LoadNewMainManifestFailed
-                    , "Can't find new version MainManifest!");
+                Error(emErrorCode.LoadNewMainManifestFailed, "Can't find new version MainManifest!");
                 yield break;
             }
 
@@ -400,8 +344,7 @@ namespace GS.AssetBundlePacker
                     {
                         string cache_hash = elem.Hash;
                         string new_hash = new_manifest.GetAssetBundleHash(name).ToString();
-                        if (!string.IsNullOrEmpty(cache_hash)
-                                && cache_hash.CompareTo(new_hash) == 0)
+                        if (!string.IsNullOrEmpty(cache_hash) && cache_hash.CompareTo(new_hash) == 0)
                         {
                             download_files.Remove(name);
                             ++currentProgress;
@@ -443,9 +386,7 @@ namespace GS.AssetBundlePacker
             }
         }
 
-        /// <summary>
-        ///   拷贝文件并覆盖旧数据文件
-        /// </summary>
+        /// <summary>拷贝文件并覆盖旧数据文件</summary>
         IEnumerator UpdatingCopyCacheFile()
         {
             if (ErrorCode != emErrorCode.None) { yield break; }
@@ -460,9 +401,8 @@ namespace GS.AssetBundlePacker
                     var src = Common.GetUpdaterCacheFileFullName(file);
                     var dest = Common.GetFileFullName(file);
                     if (File.Exists(dest))
-                    {
                         File.Delete(dest);
-                    }
+
                     File.Move(src, dest);
                 }
                 catch (System.Exception ex)
@@ -474,11 +414,9 @@ namespace GS.AssetBundlePacker
                         break;
                     }
                 }
-
             }
 
-            // 拷贝失败则需要把本地配置文件删除
-            // （由于部分配置文件拷贝失败，会导致本地的配置文件不匹配会引起版本信息错误， 统一全部删除则下次进入游戏会重新从安装包拷贝全部数据）
+            // 拷贝失败则需要把本地配置文件删除（由于部分配置文件拷贝失败，会导致本地的配置文件不匹配会引起版本信息错误， 统一全部删除则下次进入游戏会重新从安装包拷贝全部数据）
             if (IsFailed)
             {
                 for (int i = 0; i < Common.CONFIG_NAME_ARRAY.Length; ++i)
@@ -492,9 +430,7 @@ namespace GS.AssetBundlePacker
             }
         }
 
-        /// <summary>
-        ///   清理
-        /// </summary>
+        /// <summary>清理</summary>
         IEnumerator UpdatingDispose()
         {
             UpdateCompleteValue(0f, 1f);
@@ -520,13 +456,9 @@ namespace GS.AssetBundlePacker
                 if (abMgr.IsFailed)
                 {
                     if (abMgr.ErrorCode == emErrorCode.DiskFull)
-                    {
                         Error(emErrorCode.DiskFull);
-                    }
                     else
-                    {
                         Error(abMgr.ErrorCode);
-                    }
                 }
             }
 
@@ -541,13 +473,9 @@ namespace GS.AssetBundlePacker
                 var src = Common.GetUpdaterCacheFileFullName(file);
                 var dest = Common.GetFileFullName(file);
                 if (!File.Exists(src))
-                {
                     return;
-                }
                 if (File.Exists(dest))
-                {
                     File.Delete(dest);
-                }
                 File.Move(src, dest);
             }
             catch (System.Exception ex)
@@ -556,29 +484,20 @@ namespace GS.AssetBundlePacker
             }
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
         void ErrorWriteFile(emIOOperateCode resultCode, string message)
         {
             if (resultCode == emIOOperateCode.DiskFull)
             {
-                string ms = string.IsNullOrEmpty(message) ?
-                "Disk Full!" : "Disk Full, " + message;
-                Error(emErrorCode.DiskFull, ms);
+                string ms = string.IsNullOrEmpty(message) ? "Disk Full!" : "Disk Full, " + message; Error(emErrorCode.DiskFull, ms);
             }
             else if (resultCode == emIOOperateCode.Fail)
             {
-                string ms = string.IsNullOrEmpty(message) ?
-                "WriteException!" : "WriteException, " + message;
-                Error(emErrorCode.WriteException, ms);
+                string ms = string.IsNullOrEmpty(message) ? "WriteException!" : "WriteException, " + message; Error(emErrorCode.WriteException, ms);
             }
         }
 
         #region Other
-        /// <summary>
-        /// 
-        /// </summary>
+
         void Reset()
         {
             IsDone = false;
@@ -588,27 +507,21 @@ namespace GS.AssetBundlePacker
             current_url_ = "";
         }
 
-        /// <summary>
-        ///   结束
-        /// </summary>
+        /// <summary>结束</summary>
         void Done()
         {
             IsDone = true;
             OnDoneEvent();
         }
 
-        /// <summary>
-        ///   设置状态
-        /// </summary>
+        /// <summary>设置状态</summary>
         void UpdateState(emState state)
         {
             CurrentState = state;
             OnUpdateEvent();
         }
 
-        /// <summary>
-        ///   更新完成度
-        /// </summary>
+        /// <summary>更新完成度</summary>
         void UpdateCompleteValue(float current, float total)
         {
             float ratio = STATE_PROGRESS_RATIO[(int)CurrentState, 0];
@@ -617,27 +530,21 @@ namespace GS.AssetBundlePacker
             OnUpdateEvent();
         }
 
-        /// <summary>
-        ///   更新
-        /// </summary>
+        /// <summary>更新</summary>
         void OnUpdateEvent()
         {
             if (OnUpdate != null)
                 OnUpdate(this);
         }
 
-        /// <summary>
-        ///   结束事件
-        /// </summary>
+        /// <summary>结束事件</summary>
         void OnDoneEvent()
         {
             if (OnDone != null)
                 OnDone(this);
         }
 
-        /// <summary>
-        ///   错误
-        /// </summary>
+        /// <summary>错误</summary>
         void Error(emErrorCode ec, string message = null)
         {
             ErrorCode = ec;
@@ -648,9 +555,7 @@ namespace GS.AssetBundlePacker
             Debug.LogError(sb.ToString());
         }
 
-        /// <summary>
-        ///   写入下载缓存信息，用于断点续传
-        /// </summary>
+        /// <summary>写入下载缓存信息，用于断点续传</summary>
         void SaveDownloadCacheData()
         {
             if (CurrentState < emState.UpdateAssetBundle)
@@ -696,17 +601,11 @@ namespace GS.AssetBundlePacker
         #endregion
 
         #region MonoBehaviour
-        /// <summary>
-        ///   
-        /// </summary>
         void Awake()
         {
             Reset();
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
         void OnDestroy()
         {
             AbortUpdate();

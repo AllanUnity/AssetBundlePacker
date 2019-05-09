@@ -56,10 +56,12 @@ namespace GS.AssetBundlePacker
         private HashSet<string> assetbundle_async_loading_;
 
         #endregion
+
         #region MonoBahaviour
 
-        void Awake()
+        protected override void Init()
         {
+            base.Init();
             Launch();
         }
 
@@ -68,6 +70,7 @@ namespace GS.AssetBundlePacker
             ShutDown();
         }
         #endregion
+
         #region 启动
         /// <summary>启动(仅内部启用)</summary>
         void Launch()
@@ -103,16 +106,18 @@ namespace GS.AssetBundlePacker
             }
         }
         /// <summary>当前状态进度</summary>
-        public PreprocessInformation preprocessInformation { get; private set; }
+        private PreprocessInformation preprocessInformation { get; set; }
 
         /// <summary>初始化</summary>
-        IEnumerator Preprocess()
+        private IEnumerator Preprocess()
         {
             preprocessInformation = new PreprocessInformation();
 
             //判断主资源文件是否存在，不存在则拷贝备份资源至资源根目录
-            string ab_manifest_file = Common.GetFileFullName(Common.MAIN_MANIFEST_FILE_NAME);
-            string resources_manifest_file = Common.GetFileFullName(Common.RESOURCES_MANIFEST_FILE_NAME);
+            string ab_manifest_file = Common.GetFileFullName(Common.MAIN_MANIFEST_FILE_NAME);//Assets/PersistentAssets/AssetBundle/AssetBundle
+            string resources_manifest_file = Common.GetFileFullName(Common.RESOURCES_MANIFEST_FILE_NAME);//Assets/PersistentAssets/AssetBundle/ResourcesManifest.cfg
+
+            //资源不全
             if (!File.Exists(ab_manifest_file) || !File.Exists(resources_manifest_file))
             {
                 // 初始化安装包资源
@@ -133,7 +138,6 @@ namespace GS.AssetBundlePacker
             preprocessInformation.UpdateState(emPreprocessState.Load);
             yield return PreprocessLoad();
 
-
             // 结束前处理工作
             preprocessInformation.UpdateState(emPreprocessState.Dispose);
             yield return PreprocessDispose();
@@ -144,15 +148,327 @@ namespace GS.AssetBundlePacker
 
             preprocessInformation = null;
         }
+
+        /// <summary>初始化 - 安装包资源初始化</summary>
+        IEnumerator PreProcessInstallNativeAssets()
+        {
+            Debug.Log("AssetBundleManager 安装包资源初始化");
+            if (ErrorCode != emErrorCode.None)
+                yield break;
+
+            // 清理资源目录
+            if (Directory.Exists(Common.PATH))
+                Directory.Delete(Common.PATH, true);
+
+            List<string> copyFileList = new List<string>(512);
+
+            // 拷贝安装包中的ResourcesManifest至缓存目录
+            yield return StartCopyInitialFileToCache(Common.RESOURCES_MANIFEST_FILE_NAME);
+            if (IsFailed)
+                yield break;
+
+            //加载缓存目录中的ResourcesManifest
+            string res_manifest_cache_name = Common.GetCacheFileFullName(Common.RESOURCES_MANIFEST_FILE_NAME);
+            ResourcesManifest newResManifest = Common.LoadResourcesManifestByPath(res_manifest_cache_name);
+            if (newResManifest != null)
+            {
+                // 获取所有需要拷贝的文件名
+                var itr = newResManifest.Data.AssetBundles.GetEnumerator();
+                while (itr.MoveNext())
+                {
+                    if (itr.Current.Value.IsNative)
+                    {
+                        copyFileList.Add(itr.Current.Value.AssetBundleName);
+                    }
+                }
+                itr.Dispose();
+            }
+
+            // 所有文件加入拷贝列表
+            yield return StartBatchCopyInitialFileToNative(copyFileList, (AssetBundleBatchCopy c) =>
+            {
+                preprocessInformation.UpdateProgress(c.progress, c.total);
+            });
+            if (IsFailed)
+            {
+                yield break;
+            }
+
+            // 标记所有配置文件需拷贝
+            preprocessInformation.NeedCopyAllConfig = true;
+        }
+
+        /// <summary>初始化 - 最新版本资源拷贝</summary>
+        IEnumerator PreprocessUpdateNativeAssets()
+        {
+            Debug.Log("AssetBundleManager 最新版本资源拷贝");
+            if (ErrorCode != emErrorCode.None)
+            {
+                yield break;
+            }
+
+            preprocessInformation.UpdateProgress(0f, 1f);
+
+            ResourcesManifest res_manifest = Common.LoadResourcesManifest();
+            if (res_manifest == null)
+            {
+                Error(emErrorCode.LoadResourcesManifestFailed
+                    , "Can't load ResourcesManifest file!");
+                yield break;
+            }
+
+            // 拷贝安装包中的ResourcesManifest至缓存目录
+            yield return StartCopyInitialFileToCache(Common.RESOURCES_MANIFEST_FILE_NAME);
+            if (IsFailed)
+            {
+                yield break;
+            }
+
+            //加载缓存目录中的ResourcesManifest
+            string res_manifest_cache_name = Common.GetCacheFileFullName(Common.RESOURCES_MANIFEST_FILE_NAME);
+            ResourcesManifest new_res_manifest = Common.LoadResourcesManifestByPath(res_manifest_cache_name);
+            if (new_res_manifest == null)
+            {
+                Error(emErrorCode.LoadResourcesManifestFailed
+                    , "Can't load ResourcesManifest cache file!");
+                yield break;
+            }
+
+            List<string> copyFileList = new List<string>();
+            List<string> delete_files = new List<string>();
+            if (CompareVersion(res_manifest.Data.strVersion, new_res_manifest.Data.strVersion) < 0)
+            {// 安装包的资源有更新
+                AssetBundleManifest main_manifest = Common.LoadMainManifest();
+
+                // 拷贝安装包中的AssetBundle.manifest
+                yield return StartCopyInitialFileToCache(Common.MAIN_MANIFEST_FILE_NAME);
+                if (IsFailed)
+                {
+                    yield break;
+                }
+                // 加载缓存目录中的AssetBundle.manifest
+                string main_manifest_cache_name = Common.GetCacheFileFullName(Common.MAIN_MANIFEST_FILE_NAME);
+                AssetBundleManifest new_main_manifest = Common.LoadMainManifestByPath(main_manifest_cache_name);
+                if (new_main_manifest == null)
+                {
+                    Error(emErrorCode.LoadMainManifestFailed, "Can't load MainManifest cache file!");
+                    yield break;
+                }
+
+                // 计算最新的差异数据（拷贝文件列表，删除文件列表）
+                ComparisonUtils.CompareAndCalcDifferenceFiles(ref copyFileList, ref delete_files
+                    , main_manifest, new_main_manifest, res_manifest, new_res_manifest
+                    , ComparisonUtils.emCompareMode.OnlyInitial);
+
+                // 标记所有配置文件需拷贝
+                preprocessInformation.NeedCopyAllConfig = true;
+            }
+            else if (CompareVersion(res_manifest.Data.strVersion, new_res_manifest.Data.strVersion) == 0)
+            {
+                // 安装包的资源无更新
+                // 比较本地资源信息，计算需修复的数据（拷贝文件列表）
+                ComparisonUtils.CompareAndCalcRecoverFiles(ref copyFileList, res_manifest);
+            }
+
+            int progress = 0;
+            int count = delete_files.Count + copyFileList.Count;
+            // 删除无用文件
+            if (delete_files != null && delete_files.Count > 0)
+            {
+                for (int i = 0; i < delete_files.Count; ++i)
+                {
+                    string full_name = Common.GetFileFullName(delete_files[i]);
+                    if (File.Exists(full_name))
+                        File.Delete(full_name);
+
+                    yield return null;
+                    preprocessInformation.UpdateProgress(++progress, count);
+                }
+            }
+
+            // 拷贝文件
+            if (copyFileList != null && copyFileList.Count > 0)
+            {
+                yield return StartBatchCopyInitialFileToNative(copyFileList, (AssetBundleBatchCopy c) =>
+                {
+                    preprocessInformation.UpdateProgress(c.progress, c.total);
+                });
+                if (IsFailed)
+                    yield break;
+            }
+        }
+
+        /// <summary>初始化 - 更新所有配置文件</summary>
+        IEnumerator PreprocessUpdateAllConfig()
+        {
+            Debug.Log("AssetBundleManager 更新所有配置文件");
+            if (ErrorCode != emErrorCode.None)
+                yield break;
+
+            if (preprocessInformation.NeedCopyAllConfig)
+            {
+                // 拷贝配置文件（部分配置文件为非必要性文件所以需单独下载判断）
+                for (int i = 0; i < Common.CONFIG_NAME_ARRAY.Length; ++i)
+                {
+                    StreamingAssetsCopy copy = new StreamingAssetsCopy();
+                    yield return copy.Copy(Common.GetInitialFileFullName(Common.CONFIG_NAME_ARRAY[i]),
+                        Common.GetFileFullName(Common.CONFIG_NAME_ARRAY[i]));
+                    if (copy.resultCode != emIOOperateCode.Succeed && Common.CONFIG_REQUIRE_CONDITION_ARRAY[i])
+                    {
+                        var message = Common.CONFIG_NAME_ARRAY[i];
+                        if (!string.IsNullOrEmpty(copy.error))
+                        {
+                            message += ", " + copy.error;
+                        }
+                        ErrorWriteFile(copy.resultCode, message);
+                        break;
+                    }
+                }
+
+                // 拷贝失败则需要把本地配置文件删除（由于部分配置文件拷贝失败，会导致本地的配置文件不匹配会引起版本信息错误， 统一全部删除则下次进入游戏会重新拷贝全部数据）
+                if (IsFailed)
+                {
+                    for (int i = 0; i < Common.CONFIG_NAME_ARRAY.Length; ++i)
+                    {
+                        var fileFullName = Common.GetFileFullName(Common.CONFIG_NAME_ARRAY[i]);
+                        if (File.Exists(fileFullName))
+                        {
+                            File.Delete(fileFullName);
+                        }
+                    }
+                }
+            }
+        }
+
+        /// <summary>初始化 - 加载资源</summary>
+        IEnumerator PreprocessLoad()
+        {
+            Debug.Log("AssetBundleManager 加载资源");
+            if (ErrorCode != emErrorCode.None)
+                yield break;
+
+            // 加载其它必要的配置文件
+            //MainManifest
+            MainManifest = Common.LoadMainManifest();
+            if (MainManifest == null)
+            {
+                Error(emErrorCode.LoadMainManifestFailed, "Can't load MainManifest file!");
+                yield break;
+            }
+            //ResourcesManifest
+            ResManifest = Common.LoadResourcesManifest();
+            if (ResManifest == null)
+            {
+                Error(emErrorCode.LoadResourcesManifestFailed, "Can't load ResourcesManifest file!");
+                yield break;
+            }
+            // ResourcesPackages
+            ResPackages = Common.LoadResourcesPackages();
+
+            //加载常驻资源
+            if (ResManifest != null && ResManifest.Data != null && ResManifest.Data.AssetBundles != null)
+            {
+                var asset_bundles = ResManifest.Data.AssetBundles;
+                List<string> permanentAssetBundles = new List<string>(asset_bundles.Count);
+                var itr = asset_bundles.GetEnumerator();
+                while (itr.MoveNext())
+                {
+                    //预加载的初始化AssetBundle必须无任何依赖
+                    if (itr.Current.Value.IsStartupLoad && !HasDependencies(itr.Current.Key))
+                        permanentAssetBundles.Add(itr.Current.Key);
+                }
+                itr.Dispose();
+
+                // 加载资源
+                int total = permanentAssetBundles.Count;
+                for (int i = 0; i < total; ++i)
+                {
+                    yield return LoadAssetBundleAsync(itr.Current.Key);
+                    preprocessInformation.UpdateProgress(i, total);
+                }
+
+                preprocessInformation.UpdateProgress(1f, 1f);
+            }
+        }
+
+        /// <summary>初始化 - 结束前后备工作</summary>
+        IEnumerator PreprocessDispose()
+        {
+            Debug.Log("AssetBundleManager 结束前后备工作");
+            if (IsFailed)
+            {
+                UnloadAllAssetBundle(true);
+                MainManifest = null;
+                ResManifest = null;
+                ResPackages = null;
+            }
+
+            //删除缓存目录
+            if (Directory.Exists(Common.CACHE_PATH))
+                Directory.Delete(Common.CACHE_PATH, true);
+
+            yield return null;
+        }
+
+        /// <summary>初始化 - 完成</summary>
+        IEnumerator PreprocessFinished()
+        {
+            Debug.Log("AssetBundleManager 初始化完成");
+            //记录当前版本号
+            strVersion = IsFailed ? "" : ResManifest.Data.strVersion;
+            //标记已准备好
+            IsReady = true;
+            yield return null;
+        }
+
         #endregion
+
+        #region 关闭
         /// <summary>关闭</summary>
         void ShutDown()
         {
             StopAllCoroutines();
             UnloadAllAssetBundle(true);
         }
+        /// <summary>释放所有的AssetBundle</summary>
+        public void UnloadAllAssetBundle(bool unload_all_loaded_objects)
+        {
+            UnloadAssetBundleCache(unload_all_loaded_objects);
+            UnloadAssetBundlePermanent(unload_all_loaded_objects);
+        }
 
+        /// <summary>释放所有缓存的AssetBundle</summary>
+        public void UnloadAssetBundleCache(bool unload_all_loaded_objects)
+        {
+            if (assetbundle_cache_ != null && assetbundle_cache_.Count > 0)
+            {
+                var itr = assetbundle_cache_.Values.GetEnumerator();
+                while (itr.MoveNext())
+                {
+                    itr.Current.RefAssetBundle.Unload(unload_all_loaded_objects);
+                }
+                itr.Dispose();
+                assetbundle_cache_.Clear();
+            }
+        }
 
+        /// <summary>释放所有常驻的AssetBundle</summary>
+        void UnloadAssetBundlePermanent(bool unload_all_loaded_objects)
+        {
+            if (assetbundle_permanent_ != null && assetbundle_permanent_.Count > 0)
+            {
+                var itr = assetbundle_permanent_.Values.GetEnumerator();
+                while (itr.MoveNext())
+                {
+                    itr.Current.Unload(unload_all_loaded_objects);
+                }
+                itr.Dispose();
+                assetbundle_permanent_.Clear();
+            }
+        }
+        #endregion
+
+        #region 重启
         /// <summary>重启</summary>
         public bool Relaunch()
         {
@@ -165,17 +481,18 @@ namespace GS.AssetBundlePacker
 
             return true;
         }
+        #endregion
 
         /// <summary>等待启动完毕，启动完毕返回True,</summary>
         public bool WaitForLaunch()
         {
-            Debug.Log("WaitForLaunch");
             if (IsReady)
                 return true;
 
             return false;
         }
 
+        #region 加载资源\卸载资源
         /// <summary>加载一个资源</summary>
         public T LoadAsset<T>(string asset, bool unload_assetbundle = true) where T : Object
         {
@@ -405,15 +722,183 @@ namespace GS.AssetBundlePacker
             }
         }
 
-        /// <summary>判断一个AssetBundle是否存在缓存</summary>
-        public bool IsExist(string assetbundlename)
-        {
-            if (string.IsNullOrEmpty(assetbundlename))
-                return false;
 
-            return File.Exists(Common.GetFileFullName(assetbundlename));
+        #endregion
+
+        #region Private Function
+        private IEnumerator StartBatchCopyInitialFileToNative(List<string> files, System.Action<AssetBundleBatchCopy> callback)
+        {
+            AssetBundleBatchCopy batchCopy = AssetBundleBatchCopy.Create();
+            yield return batchCopy.StartBatchCopy(files, callback);
+            if (batchCopy.resultCode != emIOOperateCode.Succeed)
+            {
+                ErrorWriteFile(batchCopy.resultCode, null);
+            }
+            AssetBundleBatchCopy.Destroy(batchCopy);
         }
 
+        /// <summary>获得包含某个资源的所有AssetBundle</summary>
+        private string[] FindAllAssetBundleNameByAsset(string asset)
+        {
+            if (ResManifest == null)
+                return null;
+
+            return ResManifest.GetAllAssetBundleName(asset);
+        }
+
+        /// <summary>判断本地是否包含所有依赖</summary>
+        private bool CanLoadAssetBundleAndDependencies(string assetbundlename)
+        {
+            if (assetbundlename == null)
+                return false;
+            if (MainManifest == null)
+                return false;
+
+            string assetbundle_path = GetAssetBundlePath(assetbundlename);
+            if (!File.Exists(assetbundle_path))
+                return false;
+
+            string[] deps = MainManifest.GetAllDependencies(assetbundlename);
+            for (int index = 0; index < deps.Length; index++)
+            {
+                AssetBundle ab = FindLoadedAssetBundle(deps[index]);
+                if (ab == null)
+                {
+                    string path = GetAssetBundlePath(deps[index]);
+                    if (!File.Exists(path))
+                        return false;
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>加载所有依赖的AssetBundle</summary>
+        private string[] LoadDependenciesAssetBundle(string assetbundlename)
+        {
+            if (assetbundlename == null)
+                return null;
+            if (MainManifest == null)
+                return null;
+
+            string[] deps = MainManifest.GetAllDependencies(assetbundlename);
+            for (int index = 0; index < deps.Length; index++)
+            {
+                //加载所有的依赖AssetBundle
+                if (LoadAssetBundle(deps[index]) == null)
+                {
+                    Debug.LogWarning(assetbundlename + "'s Dependencie AssetBundle can't find. Name is (" + deps[index] + ")!");
+                    return null;
+                }
+            }
+            return deps;
+        }
+
+        /// <summary>加载AssetBundle</summary>
+        private AssetBundle LoadAssetBundle(string assetbundlename)
+        {
+            if (assetbundlename == null)
+                return null;
+
+            ///判断此AssetBundle是否正在被异步加载，则等待加载完成
+            bool isLoading = assetbundle_async_loading_.Contains(assetbundlename);
+            if (isLoading)
+            {
+                while (assetbundle_async_loading_.Contains(assetbundlename) == true)
+                {
+                }
+            }
+
+            AssetBundle ab = FindLoadedAssetBundle(assetbundlename);
+            if (ab == null)
+            {
+                string assetbundle_path = GetAssetBundlePath(assetbundlename);
+                if (File.Exists(assetbundle_path))
+                    ab = AssetBundle.LoadFromFile(assetbundle_path);
+            }
+            SaveAssetBundle(assetbundlename, ab);
+
+            return ab;
+        }
+
+        /// <summary>处理缓存的多个AssetBundle, 如果没有引用则卸载</summary>
+        private void DisposeAssetBundleCache(string[] assetbundlesName, bool unload_all_loaded_objects)
+        {
+            if (assetbundlesName != null && assetbundlesName.Length > 0)
+            {
+                for (int index = 0; index < assetbundlesName.Length; index++)
+                {
+                    DisposeAssetBundleCache(assetbundlesName[index], unload_all_loaded_objects);
+                }
+            }
+        }
+
+        /// <summary>处理缓存的AssetBundle, 如果没有引用则卸载</summary>
+        private void DisposeAssetBundleCache(string assetbundleName, bool unload_all_loaded_objects)
+        {
+            Cache cache;
+            if (assetbundle_cache_.TryGetValue(assetbundleName, out cache))
+            {
+                if (cache.RefCount == 1)
+                {
+                    cache.RefAssetBundle.Unload(unload_all_loaded_objects);
+                    assetbundle_cache_.Remove(assetbundleName);
+                }
+                else
+                {
+                    cache.RefCount -= 1;
+                    assetbundle_cache_[assetbundleName] = cache;
+                }
+            }
+        }
+
+        /// <summary>保存资源依赖，用于后续卸载资源</summary>
+        private void SaveAssetDependency(string asset, string assetbundle)
+        {
+            int refCount = 0;
+            if (asset_dependency_cache_.ContainsKey(asset))
+                refCount = asset_dependency_cache_[asset].RefCount;
+
+            ++refCount;
+
+            asset_dependency_cache_[asset] = new AssetDependCache()
+            {
+                RefCount = refCount,
+                RefAssetBundleName = assetbundle,
+            };
+        }
+
+        /// <summary>异步加载一个资源</summary>
+        private IEnumerator StartLoadAssetAsync(AssetAsyncLoader loader)
+        {
+            yield return loader.StartLoadAssetAsync(this);
+        }
+
+        /// <summary>获得一个场景的包名</summary>
+        public string FindAssetBundleNameByScene(string scene_name)
+        {
+            if (ResManifest == null)
+                return null;
+
+            return ResManifest.GetAssetBundleNameBySceneLevelName(scene_name);
+        }
+
+        /// <summary>异步加载一个场景</summary>
+        private IEnumerator StartLoadSceneAsync(SceneAsyncLoader loader)
+        {
+            yield return loader.StartLoadSceneAsync(this);
+        }
+
+        //-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+        //-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+        //-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+        //-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+        //-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+        //-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+        //-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+        //-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+        //-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+        //-----------------------------------------------------------------------------------------------------------------------------------------------------------------
         /// <summary>判断一个资源是否存在于AssetBundle中</summary>
         public bool IsAssetExist(string asset)
         {
@@ -426,11 +911,13 @@ namespace GS.AssetBundlePacker
 
             return false;
         }
-
-        /// <summary>判断场景是否存在于AssetBundle中</summary>
-        public bool IsSceneExist(string scene_name)
+        /// <summary>判断一个AssetBundle是否存在缓存</summary>
+        private bool IsExist(string assetbundlename)
         {
-            return !string.IsNullOrEmpty(FindAssetBundleNameByScene(scene_name));
+            if (string.IsNullOrEmpty(assetbundlename))
+                return false;
+
+            return File.Exists(Common.GetFileFullName(assetbundlename));
         }
 
         /// <summary>获得AssetBundle中的所有资源</summary>
@@ -441,25 +928,9 @@ namespace GS.AssetBundlePacker
                 return bundle.GetAllAssetNames();
             return null;
         }
+        #endregion
 
-        /// <summary>获得包含某个资源的所有AssetBundle</summary>
-        public string[] FindAllAssetBundleNameByAsset(string asset)
-        {
-            if (ResManifest == null)
-                return null;
-
-            return ResManifest.GetAllAssetBundleName(asset);
-        }
-
-        /// <summary>获得一个场景的包名</summary>
-        public string FindAssetBundleNameByScene(string scene_name)
-        {
-            if (ResManifest == null)
-                return null;
-
-            return ResManifest.GetAssetBundleNameBySceneLevelName(scene_name);
-        }
-
+        #region Public Function
         /// <summary>获得指定资源包的AssetBundle列表</summary>
         public List<string> FindAllAssetBundleFilesNameByPackage(string package_name)
         {
@@ -490,81 +961,16 @@ namespace GS.AssetBundlePacker
 
             return result.Count > 0 ? result : null;
         }
-        /// <summary>释放所有的AssetBundle</summary>
-        public void UnloadAllAssetBundle(bool unload_all_loaded_objects)
+
+        /// <summary>判断场景是否存在于AssetBundle中</summary>
+        public bool IsSceneExist(string scene_name)
         {
-            UnloadAssetBundleCache(unload_all_loaded_objects);
-            UnloadAssetBundlePermanent(unload_all_loaded_objects);
+            return !string.IsNullOrEmpty(FindAssetBundleNameByScene(scene_name));
         }
-
-        /// <summary>释放所有缓存的AssetBundle</summary>
-        public void UnloadAssetBundleCache(bool unload_all_loaded_objects)
-        {
-            if (assetbundle_cache_ != null && assetbundle_cache_.Count > 0)
-            {
-                var itr = assetbundle_cache_.Values.GetEnumerator();
-                while (itr.MoveNext())
-                {
-                    itr.Current.RefAssetBundle.Unload(unload_all_loaded_objects);
-                }
-                itr.Dispose();
-                assetbundle_cache_.Clear();
-            }
-        }
-
-        /// <summary>加载所有依赖的AssetBundle</summary>
-        string[] LoadDependenciesAssetBundle(string assetbundlename)
-        {
-            if (assetbundlename == null)
-                return null;
-            if (MainManifest == null)
-                return null;
-
-            string[] deps = MainManifest.GetAllDependencies(assetbundlename);
-            for (int index = 0; index < deps.Length; index++)
-            {
-                //加载所有的依赖AssetBundle
-                if (LoadAssetBundle(deps[index]) == null)
-                {
-                    Debug.LogWarning(assetbundlename + "'s Dependencie AssetBundle can't find. Name is (" + deps[index] + ")!");
-                    return null;
-                }
-            }
-
-            return deps;
-        }
-
-        /// <summary>加载AssetBundle</summary>
-        AssetBundle LoadAssetBundle(string assetbundlename)
-        {
-            if (assetbundlename == null)
-                return null;
-
-            ///判断此AssetBundle是否正在被异步加载，则等待加载完成
-            bool isLoading = assetbundle_async_loading_.Contains(assetbundlename);
-            if (isLoading)
-            {
-                while (assetbundle_async_loading_.Contains(assetbundlename) == true)
-                {
-                }
-            }
-
-            AssetBundle ab = FindLoadedAssetBundle(assetbundlename);
-            if (ab == null)
-            {
-                string assetbundle_path = GetAssetBundlePath(assetbundlename);
-                if (File.Exists(assetbundle_path))
-                {
-                    ab = AssetBundle.LoadFromFile(assetbundle_path);
-                }
-            }
-            SaveAssetBundle(assetbundlename, ab);
-
-            return ab;
-        }
+        #endregion
 
         /// <summary>异步加载一个AssetBundle</summary>
-        IEnumerator LoadAssetBundleAsync(string assetbundlename)
+        private IEnumerator LoadAssetBundleAsync(string assetbundlename)
         {
             if (assetbundlename == null)
                 yield break;
@@ -602,23 +1008,8 @@ namespace GS.AssetBundlePacker
             yield break;
         }
 
-        /// <summary>释放所有常驻的AssetBundle</summary>
-        void UnloadAssetBundlePermanent(bool unload_all_loaded_objects)
-        {
-            if (assetbundle_permanent_ != null && assetbundle_permanent_.Count > 0)
-            {
-                var itr = assetbundle_permanent_.Values.GetEnumerator();
-                while (itr.MoveNext())
-                {
-                    itr.Current.Unload(unload_all_loaded_objects);
-                }
-                itr.Dispose();
-                assetbundle_permanent_.Clear();
-            }
-        }
-
         /// <summary>保存AssetBundle到加载队列</summary>
-        void SaveAssetBundle(string assetbundlename, AssetBundle ab)
+        private void SaveAssetBundle(string assetbundlename, AssetBundle ab)
         {
             //根据AssetBundleDescribe分别存放AssetBundle
             bool permanent = ResManifest.IsPermanent(assetbundlename);
@@ -635,25 +1026,8 @@ namespace GS.AssetBundlePacker
             }
         }
 
-        /// <summary>保存资源依赖，用于后续卸载资源</summary>
-        void SaveAssetDependency(string asset, string assetbundle)
-        {
-            int refCount = 0;
-            if (asset_dependency_cache_.ContainsKey(asset))
-            {
-                refCount = asset_dependency_cache_[asset].RefCount;
-            }
-            ++refCount;
-
-            asset_dependency_cache_[asset] = new AssetDependCache()
-            {
-                RefCount = refCount,
-                RefAssetBundleName = assetbundle,
-            };
-        }
-
         /// <summary>保存到缓存中</summary>
-        void SaveAssetBundleToCache(string assetbundleName, AssetBundle ab)
+        private void SaveAssetBundleToCache(string assetbundleName, AssetBundle ab)
         {
             int refCount = 0;
             if (assetbundle_cache_.ContainsKey(assetbundleName))
@@ -669,39 +1043,8 @@ namespace GS.AssetBundlePacker
             };
         }
 
-        /// <summary>处理缓存的多个AssetBundle, 如果没有引用则卸载</summary>
-        void DisposeAssetBundleCache(string[] assetbundlesName, bool unload_all_loaded_objects)
-        {
-            if (assetbundlesName != null && assetbundlesName.Length > 0)
-            {
-                for (int index = 0; index < assetbundlesName.Length; index++)
-                {
-                    DisposeAssetBundleCache(assetbundlesName[index], unload_all_loaded_objects);
-                }
-            }
-        }
-
-        /// <summary>处理缓存的AssetBundle, 如果没有引用则卸载</summary>
-        void DisposeAssetBundleCache(string assetbundleName, bool unload_all_loaded_objects)
-        {
-            Cache cache;
-            if (assetbundle_cache_.TryGetValue(assetbundleName, out cache))
-            {
-                if (cache.RefCount == 1)
-                {
-                    cache.RefAssetBundle.Unload(unload_all_loaded_objects);
-                    assetbundle_cache_.Remove(assetbundleName);
-                }
-                else
-                {
-                    cache.RefCount -= 1;
-                    assetbundle_cache_[assetbundleName] = cache;
-                }
-            }
-        }
-
         /// <summary>查找是否有已载加的AssetBundle</summary>
-        AssetBundle FindLoadedAssetBundle(string assetbundlename)
+        private AssetBundle FindLoadedAssetBundle(string assetbundlename)
         {
             if (assetbundlename == null)
                 return null;
@@ -737,55 +1080,6 @@ namespace GS.AssetBundlePacker
         {
             var deps = GetAllDependencies(assetbundlename);
             return deps != null && deps.Length > 0;
-        }
-
-        /// <summary>判断本地是否包含所有依赖</summary>
-        bool CanLoadAssetBundleAndDependencies(string assetbundlename)
-        {
-            if (assetbundlename == null)
-                return false;
-            if (MainManifest == null)
-                return false;
-
-            string assetbundle_path = GetAssetBundlePath(assetbundlename);
-            if (!File.Exists(assetbundle_path))
-            {
-                return false;
-            }
-
-            string[] deps = MainManifest.GetAllDependencies(assetbundlename);
-            for (int index = 0; index < deps.Length; index++)
-            {
-                AssetBundle ab = FindLoadedAssetBundle(deps[index]);
-                if (ab == null)
-                {
-                    string path = GetAssetBundlePath(deps[index]);
-                    if (!File.Exists(path))
-                    {
-                        return false;
-                    }
-                }
-            }
-
-            return true;
-        }
-
-        /// <summary>异步加载一个资源</summary>
-        IEnumerator StartLoadAssetAsync(AssetAsyncLoader loader)
-        {
-            yield return loader.StartLoadAssetAsync(this);
-        }
-
-        /// <summary>异步加载一个场景</summary>
-        IEnumerator StartLoadSceneAsync(SceneAsyncLoader loader)
-        {
-            yield return loader.StartLoadSceneAsync(this);
-        }
-
-        /// <summary>获得AssetBundle的路径</summary>
-        static string GetAssetBundlePath(string assetbundlename)
-        {
-            return Common.PATH + "/" + assetbundlename;
         }
 
         /// <summary>版本号比较</summary>
@@ -848,10 +1142,109 @@ namespace GS.AssetBundlePacker
             Debug.LogError(sb.ToString());
         }
 
+        #region Preprocess
 
+        private IEnumerator StartCopyInitialFileToNative(string local_name)
+        {
+            StreamingAssetsCopy copy = new StreamingAssetsCopy();
+            yield return copy.Copy(Common.GetInitialFileFullName(local_name),
+                Common.GetFileFullName(local_name));
+            if (copy.resultCode != emIOOperateCode.Succeed)
+            {
+                var message = local_name;
+                if (!string.IsNullOrEmpty(copy.error))
+                {
+                    message += ", " + copy.error;
+                }
+                ErrorWriteFile(copy.resultCode, message);
+            }
+        }
+
+
+        #endregion
+        #region Common
+
+        /// <summary>获得AssetBundle的路径</summary>
+        private static string GetAssetBundlePath(string assetbundlename)
+        {
+            //Application.dataPath + "/PersistentAssets" + "/" + "AssetBundle" + "/" + assetbundlename
+            return Common.PATH + "/" + assetbundlename;
+        }
+
+        /// <summary>拷贝文件到缓存</summary>
+        /// <param name="local_name"></param>
+        /// <returns></returns>
+        IEnumerator StartCopyInitialFileToCache(string local_name)
+        {
+            StreamingAssetsCopy copy = new StreamingAssetsCopy();
+            yield return copy.Copy(Common.GetInitialFileFullName(local_name), Common.GetCacheFileFullName(local_name));
+            if (copy.resultCode != emIOOperateCode.Succeed)
+            {
+                var message = local_name;
+                if (!string.IsNullOrEmpty(copy.error))
+                {
+                    message += ", " + copy.error;
+                }
+                ErrorWriteFile(copy.resultCode, message);
+            }
+        }
+
+        void ErrorWriteFile(emIOOperateCode resultCode, string message)
+        {
+            if (resultCode == emIOOperateCode.DiskFull)
+            {
+                string ms = string.IsNullOrEmpty(message) ? "Disk Full!" : "Disk Full, " + message; Error(emErrorCode.DiskFull, ms);
+            }
+            else if (resultCode == emIOOperateCode.Fail)
+            {
+                string ms = string.IsNullOrEmpty(message) ? "WriteException!" : "WriteException, " + message; Error(emErrorCode.WriteException, ms);
+            }
+        }
+
+        #endregion
         #region Loader
+        /// <summary>预加载信息</summary>
+        public class PreprocessInformation
+        {
+            /// <summary>当前状态</summary>
+            public emPreprocessState State { get; private set; }
+
+            /// <summary>当前状态的进度</summary>
+            public float Progress { get; private set; }
+
+            /// <summary>当前状态的的总量值</summary>
+            public float Total { get; private set; }
+
+            /// <summary>当前状态的进度</summary>
+            public float CurrentStateProgressPercent { get { return Total != 0 ? Progress / Total : 0f; } }
+
+            /// <summary>是否需要拷贝所有配置文件</summary>
+            public bool NeedCopyAllConfig;
+
+            public PreprocessInformation()
+            {
+                this.State = emPreprocessState.None;
+                this.Progress = 0f;
+                this.Total = 1f;
+            }
+
+            /// <summary>更新状态</summary>
+            public void UpdateState(emPreprocessState state)
+            {
+                this.State = state;
+                this.Progress = 0f;
+                this.Total = 1f;
+            }
+
+            /// <summary>更新</summary>
+            public void UpdateProgress(float value, float total)
+            {
+                this.Progress = value;
+                this.Total = total;
+            }
+        }
         /// <summary>资源异步加载器</summary>
-        internal class AssetAsyncLoader
+        public class AssetAsyncLoader
         {
             /// <summary>AssetBundle名称</summary>
             public string AssetBundleName { get; private set; }
@@ -956,7 +1349,7 @@ namespace GS.AssetBundlePacker
         }
 
         /// <summary>场景异步加载器</summary>
-        internal class SceneAsyncLoader
+        public class SceneAsyncLoader
         {
             /// <summary>AssetBundle名称</summary>
             public string AssetBundleName { get; private set; }
@@ -1064,335 +1457,23 @@ namespace GS.AssetBundlePacker
             public string RefAssetBundleName;
         }
 
-        #endregion
-
-        #region Preprocess
-
-        /// <summary>初始化 - 安装包资源初始化</summary>
-        IEnumerator PreProcessInstallNativeAssets()
+        /// <summary>状态</summary>
+        public enum emPreprocessState
         {
-            if (ErrorCode != emErrorCode.None)
-                yield break;
-
-            // 清理资源目录
-            if (Directory.Exists(Common.PATH))
-            {
-                Directory.Delete(Common.PATH, true);
-            }
-
-            List<string> copyFileList = new List<string>(512);
-
-            // 拷贝安装包中的ResourcesManifest至缓存目录
-            yield return StartCopyInitialFileToCache(Common.RESOURCES_MANIFEST_FILE_NAME);
-            if (IsFailed)
-            {
-                yield break;
-            }
-            //加载缓存目录中的ResourcesManifest
-            string res_manifest_cache_name = Common.GetCacheFileFullName(Common.RESOURCES_MANIFEST_FILE_NAME);
-            ResourcesManifest newResManifest = Common.LoadResourcesManifestByPath(res_manifest_cache_name);
-            if (newResManifest != null)
-            {
-                // 获取所有需要拷贝的文件名
-                var itr = newResManifest.Data.AssetBundles.GetEnumerator();
-                while (itr.MoveNext())
-                {
-                    if (itr.Current.Value.IsNative)
-                    {
-                        copyFileList.Add(itr.Current.Value.AssetBundleName);
-                    }
-                }
-                itr.Dispose();
-            }
-
-            // 所有文件加入拷贝列表
-            yield return StartBatchCopyInitialFileToNative(copyFileList, (AssetBundleBatchCopy c) =>
-            {
-                preprocessInformation.UpdateProgress(c.progress, c.total);
-            });
-            if (IsFailed)
-            {
-                yield break;
-            }
-
-            // 标记所有配置文件需拷贝
-            preprocessInformation.NeedCopyAllConfig = true;
-        }
-
-        /// <summary>初始化 - 最新版本资源拷贝</summary>
-        IEnumerator PreprocessUpdateNativeAssets()
-        {
-            if (ErrorCode != emErrorCode.None)
-            {
-                yield break;
-            }
-
-            preprocessInformation.UpdateProgress(0f, 1f);
-
-            ResourcesManifest res_manifest = Common.LoadResourcesManifest();
-            if (res_manifest == null)
-            {
-                Error(emErrorCode.LoadResourcesManifestFailed
-                    , "Can't load ResourcesManifest file!");
-                yield break;
-            }
-
-            // 拷贝安装包中的ResourcesManifest至缓存目录
-            yield return StartCopyInitialFileToCache(Common.RESOURCES_MANIFEST_FILE_NAME);
-            if (IsFailed)
-            {
-                yield break;
-            }
-
-            //加载缓存目录中的ResourcesManifest
-            string res_manifest_cache_name = Common.GetCacheFileFullName(Common.RESOURCES_MANIFEST_FILE_NAME);
-            ResourcesManifest new_res_manifest = Common.LoadResourcesManifestByPath(res_manifest_cache_name);
-            if (new_res_manifest == null)
-            {
-                Error(emErrorCode.LoadResourcesManifestFailed
-                    , "Can't load ResourcesManifest cache file!");
-                yield break;
-            }
-
-            List<string> copyFileList = new List<string>();
-            List<string> delete_files = new List<string>();
-            if (CompareVersion(res_manifest.Data.strVersion, new_res_manifest.Data.strVersion) < 0)
-            {// 安装包的资源有更新
-                AssetBundleManifest main_manifest = Common.LoadMainManifest();
-
-                // 拷贝安装包中的AssetBundle.manifest
-                yield return StartCopyInitialFileToCache(Common.MAIN_MANIFEST_FILE_NAME);
-                if (IsFailed)
-                {
-                    yield break;
-                }
-                // 加载缓存目录中的AssetBundle.manifest
-                string main_manifest_cache_name = Common.GetCacheFileFullName(Common.MAIN_MANIFEST_FILE_NAME);
-                AssetBundleManifest new_main_manifest = Common.LoadMainManifestByPath(main_manifest_cache_name);
-                if (new_main_manifest == null)
-                {
-                    Error(emErrorCode.LoadMainManifestFailed
-                        , "Can't load MainManifest cache file!");
-                    yield break;
-                }
-
-                // 计算最新的差异数据（拷贝文件列表，删除文件列表）
-                ComparisonUtils.CompareAndCalcDifferenceFiles(ref copyFileList, ref delete_files
-                    , main_manifest, new_main_manifest, res_manifest, new_res_manifest
-                    , ComparisonUtils.emCompareMode.OnlyInitial);
-
-                // 标记所有配置文件需拷贝
-                preprocessInformation.NeedCopyAllConfig = true;
-            }
-            else if (CompareVersion(res_manifest.Data.strVersion, new_res_manifest.Data.strVersion) == 0)
-            {// 安装包的资源无更新
-                // 比较本地资源信息，计算需修复的数据（拷贝文件列表）
-                ComparisonUtils.CompareAndCalcRecoverFiles(ref copyFileList, res_manifest);
-            }
-
-            int progress = 0;
-            int count = delete_files.Count + copyFileList.Count;
-            // 删除无用文件
-            if (delete_files != null && delete_files.Count > 0)
-            {
-                for (int i = 0; i < delete_files.Count; ++i)
-                {
-                    string full_name = Common.GetFileFullName(delete_files[i]);
-                    if (File.Exists(full_name))
-                        File.Delete(full_name);
-
-                    yield return null;
-                    preprocessInformation.UpdateProgress(++progress, count);
-                }
-            }
-
-            // 拷贝文件
-            if (copyFileList != null && copyFileList.Count > 0)
-            {
-                yield return StartBatchCopyInitialFileToNative(copyFileList, (AssetBundleBatchCopy c) =>
-                {
-                    preprocessInformation.UpdateProgress(c.progress, c.total);
-                });
-                if (IsFailed)
-                    yield break;
-            }
-        }
-
-        /// <summary>初始化 - 更新所有配置文件</summary>
-        IEnumerator PreprocessUpdateAllConfig()
-        {
-            if (ErrorCode != emErrorCode.None)
-                yield break;
-
-            if (preprocessInformation.NeedCopyAllConfig)
-            {
-                // 拷贝配置文件（部分配置文件为非必要性文件所以需单独下载判断）
-                for (int i = 0; i < Common.CONFIG_NAME_ARRAY.Length; ++i)
-                {
-                    StreamingAssetsCopy copy = new StreamingAssetsCopy();
-                    yield return copy.Copy(Common.GetInitialFileFullName(Common.CONFIG_NAME_ARRAY[i]),
-                        Common.GetFileFullName(Common.CONFIG_NAME_ARRAY[i]));
-                    if (copy.resultCode != emIOOperateCode.Succeed && Common.CONFIG_REQUIRE_CONDITION_ARRAY[i])
-                    {
-                        var message = Common.CONFIG_NAME_ARRAY[i];
-                        if (!string.IsNullOrEmpty(copy.error))
-                        {
-                            message += ", " + copy.error;
-                        }
-                        ErrorWriteFile(copy.resultCode, message);
-                        break;
-                    }
-                }
-
-                // 拷贝失败则需要把本地配置文件删除（由于部分配置文件拷贝失败，会导致本地的配置文件不匹配会引起版本信息错误， 统一全部删除则下次进入游戏会重新拷贝全部数据）
-                if (IsFailed)
-                {
-                    for (int i = 0; i < Common.CONFIG_NAME_ARRAY.Length; ++i)
-                    {
-                        var fileFullName = Common.GetFileFullName(Common.CONFIG_NAME_ARRAY[i]);
-                        if (File.Exists(fileFullName))
-                        {
-                            File.Delete(fileFullName);
-                        }
-                    }
-                }
-            }
-        }
-
-        /// <summary>初始化 - 加载资源</summary>
-        IEnumerator PreprocessLoad()
-        {
-            if (ErrorCode != emErrorCode.None)
-                yield break;
-
-            // 加载其它必要的配置文件
-            //MainManifest
-            MainManifest = Common.LoadMainManifest();
-            if (MainManifest == null)
-            {
-                Error(emErrorCode.LoadMainManifestFailed, "Can't load MainManifest file!");
-                yield break;
-            }
-            //ResourcesManifest
-            ResManifest = Common.LoadResourcesManifest();
-            if (ResManifest == null)
-            {
-                Error(emErrorCode.LoadResourcesManifestFailed, "Can't load ResourcesManifest file!");
-                yield break;
-            }
-            // ResourcesPackages
-            ResPackages = Common.LoadResourcesPackages();
-
-            //加载常驻资源
-            if (ResManifest != null && ResManifest.Data != null && ResManifest.Data.AssetBundles != null)
-            {
-                var asset_bundles = ResManifest.Data.AssetBundles;
-                List<string> permanentAssetBundles = new List<string>(asset_bundles.Count);
-                var itr = asset_bundles.GetEnumerator();
-                while (itr.MoveNext())
-                {
-                    //预加载的初始化AssetBundle必须无任何依赖
-                    if (itr.Current.Value.IsStartupLoad && !HasDependencies(itr.Current.Key))
-                        permanentAssetBundles.Add(itr.Current.Key);
-                }
-                itr.Dispose();
-
-                // 加载资源
-                int total = permanentAssetBundles.Count;
-                for (int i = 0; i < total; ++i)
-                {
-                    yield return LoadAssetBundleAsync(itr.Current.Key);
-                    preprocessInformation.UpdateProgress(i, total);
-                }
-
-                preprocessInformation.UpdateProgress(1f, 1f);
-            }
-        }
-        /// <summary>初始化 - 结束前后备工作</summary>
-        IEnumerator PreprocessDispose()
-        {
-            if (IsFailed)
-            {
-                UnloadAllAssetBundle(true);
-                MainManifest = null;
-                ResManifest = null;
-                ResPackages = null;
-            }
-
-            //删除缓存目录
-            if (Directory.Exists(Common.CACHE_PATH))
-                Directory.Delete(Common.CACHE_PATH, true);
-
-            yield return null;
-        }
-        /// <summary>初始化 - 完成</summary>
-        IEnumerator PreprocessFinished()
-        {
-            //记录当前版本号
-            strVersion = IsFailed ? "" : ResManifest.Data.strVersion;
-            //标记已准备好
-            IsReady = true;
-            yield return null;
-        }
-
-        IEnumerator StartCopyInitialFileToCache(string local_name)
-        {
-            StreamingAssetsCopy copy = new StreamingAssetsCopy();
-            yield return copy.Copy(Common.GetInitialFileFullName(local_name),
-                Common.GetCacheFileFullName(local_name));
-            if (copy.resultCode != emIOOperateCode.Succeed)
-            {
-                var message = local_name;
-                if (!string.IsNullOrEmpty(copy.error))
-                {
-                    message += ", " + copy.error;
-                }
-                ErrorWriteFile(copy.resultCode, message);
-            }
-        }
-
-        IEnumerator StartCopyInitialFileToNative(string local_name)
-        {
-            StreamingAssetsCopy copy = new StreamingAssetsCopy();
-            yield return copy.Copy(Common.GetInitialFileFullName(local_name),
-                Common.GetFileFullName(local_name));
-            if (copy.resultCode != emIOOperateCode.Succeed)
-            {
-                var message = local_name;
-                if (!string.IsNullOrEmpty(copy.error))
-                {
-                    message += ", " + copy.error;
-                }
-                ErrorWriteFile(copy.resultCode, message);
-            }
-        }
-
-        IEnumerator StartBatchCopyInitialFileToNative(List<string> files
-            , System.Action<AssetBundleBatchCopy> callback)
-        {
-            AssetBundleBatchCopy batchCopy = AssetBundleBatchCopy.Create();
-            yield return batchCopy.StartBatchCopy(files, callback);
-            if (batchCopy.resultCode != emIOOperateCode.Succeed)
-            {
-                ErrorWriteFile(batchCopy.resultCode, null);
-            }
-            AssetBundleBatchCopy.Destroy(batchCopy);
-        }
-
-        void ErrorWriteFile(emIOOperateCode resultCode, string message)
-        {
-            if (resultCode == emIOOperateCode.DiskFull)
-            {
-                string ms = string.IsNullOrEmpty(message) ?
-                "Disk Full!" : "Disk Full, " + message;
-                Error(emErrorCode.DiskFull, ms);
-            }
-            else if (resultCode == emIOOperateCode.Fail)
-            {
-                string ms = string.IsNullOrEmpty(message) ?
-                "WriteException!" : "WriteException, " + message;
-                Error(emErrorCode.WriteException, ms);
-            }
+            /// <summary>无</summary>
+            None,
+            /// <summary>安装包资源初始化</summary>
+            Install,
+            /// <summary>最新版本资源拷贝</summary>
+            Update,
+            /// <summary>游戏初始资源加载</summary>
+            Load,
+            /// <summary>后备工作</summary>
+            Dispose,
+            /// <summary>完成</summary>
+            Completed,
+            /// <summary>失败</summary>
+            Failed,
         }
         #endregion
     }

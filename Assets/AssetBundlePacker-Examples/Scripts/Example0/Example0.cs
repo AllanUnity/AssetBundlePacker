@@ -18,6 +18,7 @@ public class Example0 : MonoBehaviour
     {
         //此层次下的所有对象禁止被删除
         DontDestroyOnLoad(transform.gameObject);
+        AssetBundleManager.CreateSingleton();
 
         var array = GameObject.FindObjectsOfType<Example0>();
         if (array.Length > 1)

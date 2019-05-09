@@ -8,9 +8,6 @@ namespace GS.AssetBundlePacker
         /// <summary>AssetBundle后缀名</summary>
         public const string EXTENSION = "_ab";
 
-        /// <summary>
-        /// 
-        /// </summary>
         public const string NATIVE_MANIFEST_EXTENSION = ".manifest";
 
         /// <summary>资源所在根文件夹名</summary>
@@ -23,13 +20,13 @@ namespace GS.AssetBundlePacker
         ///   常驻根路径
         ///   此路径主要存放所有游戏中所需使用的AssetBundle、其它配置文件
         /// </summary>
-        public static readonly string PATH = Platform.PERSISTENT_DATA_PATH + "/" + ROOT_FOLDER_NAME;
+        public static readonly string PATH = Platform.PersistentAssetsPath + "/" + ROOT_FOLDER_NAME;
 
         /// <summary>
         ///   初始路径
         ///   此路径为安装包中的AssetBundlePacker所携带的资源和配置文件路径
         /// </summary>
-        public static readonly string INITIAL_PATH = Platform.STREAMING_ASSETS_PATH + "/" + ROOT_FOLDER_NAME;
+        public static readonly string INITIAL_PATH = Platform.StreamingAssetsPaht + "/" + ROOT_FOLDER_NAME;
 
         /// <summary>
         ///   缓存路径
