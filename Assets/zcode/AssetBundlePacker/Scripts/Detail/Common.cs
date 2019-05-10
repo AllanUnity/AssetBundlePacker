@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.IO;
+using UnityEngine;
 
 namespace GS.AssetBundlePacker
 {
@@ -125,7 +126,7 @@ namespace GS.AssetBundlePacker
         /// <summary>载入Manifest</summary>
         public static AssetBundleManifest LoadMainManifestByPath(string full_name)
         {
-            if (!System.IO.File.Exists(full_name))
+            if (!File.Exists(full_name))
             {
                 return null;
             }

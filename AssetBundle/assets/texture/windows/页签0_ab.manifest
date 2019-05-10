@@ -1,0 +1,16 @@
+ManifestFileVersion: 0
+CRC: 853816954
+Hashes:
+  AssetFileHash:
+    serializedVersion: 2
+    Hash: 431e7c8a356fc358f0f0db0b4e7b43fd
+  TypeTreeHash:
+    serializedVersion: 2
+    Hash: c73412a662fd4e4f36af34cbdf078b85
+HashAppended: 0
+ClassTypes:
+- Class: 28
+  Script: {instanceID: 0}
+Assets:
+- "Assets/Texture/Windows/\u9875\u7B7E0.png"
+Dependencies: []

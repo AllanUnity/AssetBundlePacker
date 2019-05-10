@@ -71,6 +71,16 @@ namespace GS.AssetBundlePacker
         }
         #endregion
 
+        /// <summary>等待启动完毕，启动完毕返回True,</summary>
+        public bool WaitForLaunch()
+        {
+            if (IsReady)
+                return true;
+
+            return false;
+        }
+
+
         #region 启动
         /// <summary>启动(仅内部启用)</summary>
         void Launch(DelegateMonoSlingletonCreateCallBack cb)
@@ -120,12 +130,14 @@ namespace GS.AssetBundlePacker
             //资源不全
             if (!File.Exists(ab_manifest_file) || !File.Exists(resources_manifest_file))
             {
+                Debug.Log("初始化安装包资源");
                 // 初始化安装包资源
                 preprocessInformation.UpdateState(emPreprocessState.Install);
                 yield return PreProcessInstallNativeAssets();
             }
             else
             {
+                Debug.Log("更新本地资源");
                 // 更新本地资源
                 preprocessInformation.UpdateState(emPreprocessState.Update);
                 yield return PreprocessUpdateNativeAssets();
@@ -157,7 +169,7 @@ namespace GS.AssetBundlePacker
         /// <summary>初始化 - 安装包资源初始化</summary>
         IEnumerator PreProcessInstallNativeAssets()
         {
-            Debug.LogError("AssetBundleManager 安装包资源初始化");
+            Debug.Log("AssetBundleManager 安装包资源初始化");
             if (ErrorCode != emErrorCode.None)
                 yield break;
 
@@ -244,12 +256,12 @@ namespace GS.AssetBundlePacker
 
             List<string> copyFileList = new List<string>();
             List<string> delete_files = new List<string>();
-
             Debug.Log("<color=yellow>暂时没有更新数据,先测试无更新</color>");
             if (CompareVersion(res_manifest.Data.strVersion, new_res_manifest.Data.strVersion) < 0)
             {
                 //-------------------------------
                 // 安装包的资源有更新
+                Debug.Log("<color=red>安装包资源有更新</color>");
                 AssetBundleManifest main_manifest = Common.LoadMainManifest();
 
                 // 拷贝安装包中的AssetBundle.manifest
@@ -277,6 +289,7 @@ namespace GS.AssetBundlePacker
             }
             else if (CompareVersion(res_manifest.Data.strVersion, new_res_manifest.Data.strVersion) == 0)
             {
+                Debug.Log("<color=green>安装包的资源无更新</color>");
                 // 安装包的资源无更新
                 // 比较本地资源信息，计算需修复的数据（拷贝文件列表）
                 ComparisonUtils.CompareAndCalcRecoverFiles(ref copyFileList, res_manifest);
@@ -323,8 +336,15 @@ namespace GS.AssetBundlePacker
                 for (int i = 0; i < Common.CONFIG_NAME_ARRAY.Length; ++i)
                 {
                     StreamingAssetsCopy copy = new StreamingAssetsCopy();
-                    yield return copy.Copy(Common.GetInitialFileFullName(Common.CONFIG_NAME_ARRAY[i]),
-                        Common.GetFileFullName(Common.CONFIG_NAME_ARRAY[i]));
+
+                    // Assets/StreamingAssets/AssetBundle/ + local_name
+                    string initial_Local_Name = Common.GetInitialFileFullName(Common.CONFIG_NAME_ARRAY[i]);
+                    //资源全局路径
+                    // Assets/PersistentAssets/AssetBundle/ + local_name
+                    string fileFull_Local_Name = Common.GetFileFullName(Common.CONFIG_NAME_ARRAY[i]);
+
+                    yield return copy.Copy(initial_Local_Name, fileFull_Local_Name);
+
                     if (copy.resultCode != emIOOperateCode.Succeed && Common.CONFIG_REQUIRE_CONDITION_ARRAY[i])
                     {
                         var message = Common.CONFIG_NAME_ARRAY[i];
@@ -367,6 +387,7 @@ namespace GS.AssetBundlePacker
                 Error(emErrorCode.LoadMainManifestFailed, "Can't load MainManifest file!");
                 yield break;
             }
+            // 载入ResourcesMnifest
             //ResourcesManifest
             ResManifest = Common.LoadResourcesManifest();
             if (ResManifest == null)
@@ -374,6 +395,7 @@ namespace GS.AssetBundlePacker
                 Error(emErrorCode.LoadResourcesManifestFailed, "Can't load ResourcesManifest file!");
                 yield break;
             }
+            // 载入ResourcesPack
             // ResourcesPackages
             ResPackages = Common.LoadResourcesPackages();
 
@@ -494,14 +516,6 @@ namespace GS.AssetBundlePacker
         }
         #endregion
 
-        /// <summary>等待启动完毕，启动完毕返回True,</summary>
-        public bool WaitForLaunch()
-        {
-            if (IsReady)
-                return true;
-
-            return false;
-        }
 
         #region 加载资源\卸载资源
         /// <summary>加载一个资源</summary>
@@ -509,11 +523,13 @@ namespace GS.AssetBundlePacker
         {
             try
             {
+                Debug.Log(System.DateTime.Now.Millisecond);
                 if (!IsPlatformSupport)
                     return null;
                 if (!IsReady || IsFailed)
                     return null;
 
+                // 转小写,匹配abname
                 asset = asset.ToLower();
 
                 // 加载AssetBundle
@@ -732,7 +748,6 @@ namespace GS.AssetBundlePacker
                 DisposeAssetBundleCache(deps, true);
             }
         }
-
 
         #endregion
 
@@ -1240,7 +1255,7 @@ namespace GS.AssetBundlePacker
             public float CurrentStateProgressPercent { get { return Total != 0 ? Progress / Total : 0f; } }
 
             /// <summary>是否需要拷贝所有配置文件</summary>
-            public bool NeedCopyAllConfig;
+            public bool NeedCopyAllConfig { get; set; }
 
             public PreprocessInformation()
             {

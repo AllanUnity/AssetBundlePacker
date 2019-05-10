@@ -82,7 +82,7 @@ public class GameManager : MonoBehaviour
     void LoadText()
     {
         TextAsset text_asset = ResourcesManager.Load<TextAsset>(TEXT_FILE);
-
+        Debug.Log(System.DateTime.Now.Millisecond);
         if (text_asset != null)
         {
             SetShowText(text_asset.text);
@@ -94,10 +94,11 @@ public class GameManager : MonoBehaviour
         });
     }
 
-    const string TEXTURE_FILE = "Assets/Resources/Version_1/Texture/Tex_1.png";
+    const string TEXTURE_FILE = "Assets/Resources/Version_1/Texture/office.png";
     void LoadTexture()
     {
         Texture texture_ = ResourcesManager.Load<Texture2D>(TEXTURE_FILE);
+        Debug.Log(System.DateTime.Now.Millisecond);
         if (texture_ != null)
         {
             SetShowTexture(texture_);
@@ -114,6 +115,7 @@ public class GameManager : MonoBehaviour
     {
         GameObject model_ = null;
         GameObject prefab = ResourcesManager.Load<GameObject>(MODEL_FILE);
+        Debug.Log(System.DateTime.Now);
         if (prefab != null)
         {
             model_ = GameObject.Instantiate(prefab);

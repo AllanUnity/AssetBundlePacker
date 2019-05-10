@@ -31,6 +31,7 @@ public abstract class MonoSingleton<T> : MonoBehaviour where T : MonoSingleton<T
         }
 
         GameObject go = new GameObject(typeof(T).Name);
+        DontDestroyOnLoad(go);
         if (parent != null)
         {
             go.transform.SetParent(parent);

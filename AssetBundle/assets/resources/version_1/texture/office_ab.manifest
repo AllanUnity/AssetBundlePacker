@@ -1,0 +1,16 @@
+ManifestFileVersion: 0
+CRC: 4103416957
+Hashes:
+  AssetFileHash:
+    serializedVersion: 2
+    Hash: ebf1ffdfc9e1faa07bbe2464b9f8f8e8
+  TypeTreeHash:
+    serializedVersion: 2
+    Hash: c73412a662fd4e4f36af34cbdf078b85
+HashAppended: 0
+ClassTypes:
+- Class: 28
+  Script: {instanceID: 0}
+Assets:
+- Assets/Resources/Version_1/Texture/office.png
+Dependencies: []
