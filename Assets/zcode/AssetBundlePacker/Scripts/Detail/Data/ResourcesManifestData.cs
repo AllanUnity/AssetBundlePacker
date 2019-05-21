@@ -1,59 +1,8 @@
-﻿/***************************************************************
- * Note  : 资源描述数据
-***************************************************************/
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace GS.AssetBundlePacker
 {
-    /// <summary>资源清单</summary>
-    public class ResourcesManifestData
-    {
-        /// <summary>场景描述信息</summary>
-        public class Scene
-        {
-            /// <summary>场景名称</summary>
-            public string SceneLevelName;
-            /// <summary>场景路径</summary>
-            public string ScenePath;
-            /// <summary>场景配置文件路径</summary>
-            public string SceneConfigPath;
-        }
-
-        /// <summary>AssetBundle描述信息</summary>
-        public class AssetBundle
-        {
-            /// <summary>AssetBundleName</summary>
-            public string AssetBundleName;
-            /// <summary>资源列表</summary>
-            public List<string> Assets = new List<string>();
-            /// <summary>场景列表</summary>
-            public List<string> Scenes = new List<string>();
-            /// <summary>AssetBundle大小</summary>
-            public long Size;
-            /// <summary>压缩包大小</summary>
-            public long CompressSize;
-            /// <summary>是否压缩</summary>
-            public bool IsCompress = false;
-            /// <summary>是否打包到安装包中（是否作为原始资源）</summary>
-            public bool IsNative = false;
-            /// <summary>是否常驻内存</summary>
-            public bool IsPermanent = false;
-            /// <summary>是否启动时加载（此AssetBundle也是常驻内存）</summary>
-            public bool IsStartupLoad = false;
-        }
-
-        /// <summary>版本号</summary>
-        public string strVersion;
-        /// <summary>是否打包所有AssetBundle至安装包</summary>
-        public bool IsAllNative;
-        /// <summary>是否所有AssetBundle都压缩</summary>
-        public bool IsAllCompress;
-        //Key：AssetBundleName Value: Describe
-        public Dictionary<string, AssetBundle> AssetBundles = new Dictionary<string, AssetBundle>();
-        //Key：SceneLevelName Value: SceneDescribe
-        public Dictionary<string, Scene> Scenes = new Dictionary<string, Scene>();
-    }
-
+    /// <summary>资源描述数据</summary>
     public class ResourcesManifest
     {
         /// <summary>资源清单</summary>
@@ -212,4 +161,53 @@ namespace GS.AssetBundlePacker
             return 0;
         }
     }
+    /// <summary>资源清单</summary>
+    public class ResourcesManifestData
+    {
+        /// <summary>场景描述信息</summary>
+        public class Scene
+        {
+            /// <summary>场景名称</summary>
+            public string SceneLevelName;
+            /// <summary>场景路径</summary>
+            public string ScenePath;
+            /// <summary>场景配置文件路径</summary>
+            public string SceneConfigPath;
+        }
+
+        /// <summary>AssetBundle描述信息</summary>
+        public class AssetBundle
+        {
+            /// <summary>AssetBundleName</summary>
+            public string AssetBundleName;
+            /// <summary>资源列表</summary>
+            public List<string> Assets = new List<string>();
+            /// <summary>场景列表</summary>
+            public List<string> Scenes = new List<string>();
+            /// <summary>AssetBundle大小</summary>
+            public long Size;
+            /// <summary>压缩包大小</summary>
+            public long CompressSize;
+            /// <summary>是否压缩</summary>
+            public bool IsCompress = false;
+            /// <summary>是否打包到安装包中（是否作为原始资源）</summary>
+            public bool IsNative = false;
+            /// <summary>是否常驻内存</summary>
+            public bool IsPermanent = false;
+            /// <summary>是否启动时加载（此AssetBundle也是常驻内存）</summary>
+            public bool IsStartupLoad = false;
+        }
+
+        /// <summary>版本号</summary>
+        public string strVersion;
+        /// <summary>是否打包所有AssetBundle至安装包</summary>
+        public bool IsAllNative;
+        /// <summary>是否所有AssetBundle都压缩</summary>
+        public bool IsAllCompress;
+        //Key：AssetBundleName Value: Describe
+        public Dictionary<string, AssetBundle> AssetBundles = new Dictionary<string, AssetBundle>();
+        //Key：SceneLevelName Value: SceneDescribe
+        public Dictionary<string, Scene> Scenes = new Dictionary<string, Scene>();
+    }
+
 }

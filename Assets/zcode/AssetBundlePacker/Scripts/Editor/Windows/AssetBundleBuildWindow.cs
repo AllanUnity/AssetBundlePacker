@@ -229,7 +229,6 @@ namespace GS.AssetBundlePacker
             }
         }
 
-
         public const int ASSET_NODE_LAYER_SPACE = 10;
 
         private AssetBundleBuild asset_bundle_build_;
@@ -245,6 +244,48 @@ namespace GS.AssetBundlePacker
 
         /// <summary>资源打包起始路径</summary>
         string build_start_full_path_;
+
+        [MenuItem("AssetBundle/Windows/AssetBundle Build Window")]
+        public static void Open()
+        {
+            var win = EditorWindow.GetWindow<AssetBundleBuildWindow>("AB Build");
+            if (win != null)
+            {
+                win.Show();
+            }
+        }
+
+        void Awake()
+        {
+            LoadData();
+        }
+        void OnEnable()
+        {
+            if (asset_bundle_build_ == null || gui_multi_select_ == null)
+            {
+                LoadData();
+            }
+
+            Instance = this;
+        }
+
+        void OnGUI()
+        {
+            if (GUILayoutHelper.DrawHeader("常规", "1", true, false))
+            {
+                DrawGeneral();
+            }
+            if (GUILayoutHelper.DrawHeader("资源(" + asset_bundle_build_.BuildStartFullPath + ")", "3", true, false))
+            {
+                DrawAssets();
+            }
+            if (GUILayoutHelper.DrawHeader("场景(" + EditorCommon.SCENE_START_PATH + ")", "2", true, false))
+            {
+                DrawScenes();
+            }
+        }
+
+
 
         /// <summary>重新载入数据</summary>
         public void SyncConfigForm(ResourcesManifestData res)
@@ -401,14 +442,10 @@ namespace GS.AssetBundlePacker
         }
 
         /// <summary>刷新打包数据</summary>
-        void UpdateAssetBundleBuildData()
-        {
-
-        }
+        void UpdateAssetBundleBuildData() { }
 
         /// <summary>修改打包规则</summary>
-        void ModifyRuleForSelectTreeNodes(emAssetBundleNameRule rule
-            , bool is_compress, bool is_native, bool is_permanent, bool is_startup_load)
+        void ModifyRuleForSelectTreeNodes(emAssetBundleNameRule rule, bool is_compress, bool is_native, bool is_permanent, bool is_startup_load)
         {
             if (gui_multi_select_ != null)
             {
@@ -539,7 +576,8 @@ namespace GS.AssetBundlePacker
             count = asset_bundle_build_.Data.Assets.Root.Count();
             RefreshGranularity(granularity_table, granularity_details_table, path, group.Root, (name) =>
             {
-                if (progress_report != null) { progress_report("正在刷新 " + name, ++current / count); }
+                if (progress_report != null) 
+                    progress_report("正在刷新 " + name, ++current / count); 
             });
 
         }
@@ -873,48 +911,5 @@ namespace GS.AssetBundlePacker
             return false;
         }
         #endregion
-
-        void Awake()
-        {
-            LoadData();
-
-        }
-        void OnEnable()
-        {
-            if (asset_bundle_build_ == null || gui_multi_select_ == null)
-            {
-                LoadData();
-            }
-
-            Instance = this;
-        }
-
-        void Update() { }
-
-        void OnGUI()
-        {
-            if (GUILayoutHelper.DrawHeader("常规", "1", true, false))
-            {
-                DrawGeneral();
-            }
-            if (GUILayoutHelper.DrawHeader("资源(" + asset_bundle_build_.BuildStartFullPath + ")", "3", true, false))
-            {
-                DrawAssets();
-            }
-            if (GUILayoutHelper.DrawHeader("场景(" + EditorCommon.SCENE_START_PATH + ")", "2", true, false))
-            {
-                DrawScenes();
-            }
-        }
-
-        [MenuItem("AssetBundle/Windows/AssetBundle Build Window")]
-        public static void Open()
-        {
-            var win = EditorWindow.GetWindow<AssetBundleBuildWindow>("AB Build");
-            if (win != null)
-            {
-                win.Show();
-            }
-        }
     }
 }

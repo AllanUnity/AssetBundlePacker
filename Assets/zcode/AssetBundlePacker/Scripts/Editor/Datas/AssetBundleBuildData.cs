@@ -1,301 +1,17 @@
-﻿/***************************************************************
- * Note  : AssetBundle打包规则配置数据
-***************************************************************/
-using UnityEngine;
-using System;
-using System.Collections;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using UnityEngine;
 
 namespace GS.AssetBundlePacker
 {
-    /// <summary>
-    /// 
-    /// </summary>
-    public class AssetBundleBuildData
-    {
-        /// <summary>
-        ///   Asset's build data
-        /// </summary>
-        public class AssetBuild
-        {
-            /// <summary>
-            ///   资源结点
-            /// </summary>
-            public class Element
-            {
-                /// <summary>
-                ///   名称
-                /// </summary>
-                public string Name;
-                /// <summary>
-                ///   是否文件夹
-                /// </summary>
-                public bool IsFolder;
-                /// <summary>
-                ///   规则
-                /// </summary>
-                public int Rule;
-                /// <summary>
-                /// 是否压缩
-                /// </summary>
-                public bool IsCompress;
-                /// <summary>
-                /// 是否打包到安装包中
-                /// </summary>
-                public bool IsNative;
-                /// <summary>
-                /// 是否常驻内存
-                /// </summary>
-                public bool IsPermanent;
-                /// <summary>
-                /// 启动时加载
-                /// </summary>
-                public bool IsStartupLoad;
-                /// <summary>
-                ///   子对象
-                /// </summary>
-                public List<Element> Children;
-
-                /// <summary>
-                /// 
-                /// </summary>
-                public Element()
-                {
-                }
-
-                /// <summary>
-                /// 
-                /// </summary>
-                public Element(string name)
-                {
-                    Name = name;
-                }
-
-                /// <summary>
-                ///   增加一个子对象
-                /// </summary>
-                public void Add(Element child)
-                {
-                    if (Children == null)
-                        Children = new List<Element>();
-
-                    Children.Add(child);
-                }
-
-                /// <summary>
-                ///   查找文件夹
-                /// </summary>
-                public Element FindFolderElement(string name)
-                {
-                    if (Children == null)
-                        return null;
-                    return Children.Find((elem) =>
-                    {
-                        return elem.Name == name && elem.IsFolder;
-                    });
-                }
-
-                /// <summary>
-                ///   查找文件
-                /// </summary>
-                public Element FindFileElement(string name)
-                {
-                    if (Children == null)
-                        return null;
-                    return Children.Find((elem) =>
-                    {
-                        return elem.Name == name && !elem.IsFolder;
-                    });
-                }
-
-                /// <summary>
-                ///   子数量
-                /// </summary>
-                public int Count()
-                {
-                    int count = 0;
-                    if (Children != null)
-                    {
-                        count += Children.Count;
-                        for (int i = 0; i < Children.Count; ++i)
-                        {
-                            count += Children[i].Count();
-                        }
-                    }
-
-                    return count;
-                }
-
-                /// <summary>
-                /// 拷贝
-                /// </summary>
-                public void CopyTo(Element elem)
-                {
-                    elem.Name = Name;
-                    elem.IsFolder = IsFolder;
-                    elem.Rule = Rule;
-                    elem.IsCompress = IsCompress;
-                    elem.IsNative = IsNative;
-                    elem.IsPermanent = IsPermanent;
-                    elem.Children = new List<Element>(Children);
-                }
-
-                /// <summary>
-                ///   
-                /// </summary>
-                public override bool Equals(object obj)
-                {
-                    if (obj == null)
-                    {
-                        return false;
-                    }
-                    if (obj.GetType() != this.GetType())
-                    {
-                        return false;
-                    }
-
-                    Element other = obj as Element;
-                    if (this.Name != other.Name)
-                        return false;
-                    if (this.IsFolder != other.IsFolder)
-                        return false;
-                    if (this.Rule != other.Rule)
-                        return false;
-                    if (this.Children == null && other.Children != null)
-                        return false;
-                    if (this.Children != null && other.Children == null)
-                        return false;
-                    if (this.Children != null && other.Children != null)
-                    {
-                        if (this.Children.Count != other.Children.Count)
-                            return false;
-
-                        int count = this.Children.Count;
-                        for (int i = 0; i < count; ++i)
-                        {
-                            if (!this.Children[i].Equals(other.Children[i]))
-                                return false;
-                        }
-                    }
-
-                    return true;
-                }
-
-                /// <summary>
-                /// 
-                /// </summary>
-                public override int GetHashCode()
-                {
-                    return Name.GetHashCode();
-                }
-
-                /// <summary>
-                /// 排序
-                /// 1.优先显示文件夹(以字符顺序排序)
-                /// 2.其次显示文件(以字符顺序排序)
-                /// </summary>
-                public void SortChildren()
-                {
-                    if(Children != null && Children.Count > 1)
-                    {
-                        Children.Sort(_ComparisonElement);
-                    }
-                }
-
-                int _ComparisonElement(Element x, Element y)
-                {
-                    if((x.IsFolder && y.IsFolder) || (!x.IsFolder && !y.IsFolder))
-                    {
-                        return string.Compare(x.Name, y.Name, StringComparison.Ordinal);
-                    }
-                    else if(x.IsFolder)
-                    {
-                        return -1;
-                    }
-                    else if (y.IsFolder)
-                    {
-                        return 1;
-                    }
-
-                    return -1;
-                }
-            }
-
-            public Element Root;
-        }
-
-        /// <summary>
-        ///   Scene's build data
-        /// </summary>
-        public class SceneBuild
-        {
-            public class Element
-            {
-                /// <summary>
-                /// 场景路径
-                /// </summary>
-                public string ScenePath;
-                /// <summary>
-                /// 是否打包
-                /// </summary>
-                public bool IsBuild;
-                /// <summary>
-                /// 是否压缩
-                /// </summary>
-                public bool IsCompress;
-                /// <summary>
-                /// 是否打包到安装包中
-                /// </summary>
-                public bool IsNative;
-            }
-            public List<Element> Scenes = new List<Element>();
-        }
-
-        /// <summary>
-        /// 版本号
-        /// </summary>
-        public string strVersion;
-
-        /// <summary>
-        /// AssetBundle打包起始相对路径
-        /// </summary>
-        public string BuildStartLocalPath = Common.PROJECT_ASSET_ROOT_NAME;
-
-        /// <summary>
-        /// 是否打包所有AssetBundle至安装包
-        /// </summary>
-        public bool IsAllNative;
-
-        /// <summary>
-        /// 是否所有AssetBundle都压缩
-        /// </summary>
-        public bool IsAllCompress;
-
-        /// <summary>
-        /// 资源
-        /// </summary>
-        public AssetBuild Assets = new AssetBuild();
-
-        /// <summary>
-        /// 场景
-        /// </summary>
-        public SceneBuild Scenes = new SceneBuild();
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
+    /// <summary>AssetBundle打包规则配置数据</summary>
     public class AssetBundleBuild
     {
-        /// <summary>
-        ///   数据
-        /// </summary>
+        /// <summary>数据</summary>
         public AssetBundleBuildData Data;
 
-        /// <summary>
-        /// AssetBundle打包起始全局路径
-        /// </summary>
+        /// <summary>AssetBundle打包起始全局路径</summary>
         public string BuildStartFullPath
         {
             get
@@ -307,37 +23,25 @@ namespace GS.AssetBundlePacker
             }
         }
 
-
-        /// <summary>
-        ///   
-        /// </summary>
         public AssetBundleBuild()
         {
             Data = new AssetBundleBuildData();
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
         public bool Load(string file_name)
         {
             return SimpleJsonReader.ReadFromFile<AssetBundleBuildData>(ref Data, file_name);
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
         public bool Save(string file_name)
         {
             return SimpleJsonWriter.WriteToFile(Data, file_name);
         }
 
-        /// <summary>
-        /// 更改打包资源起始路径
-        /// </summary>
+        /// <summary>更改打包资源起始路径</summary>
         public void ModifyAssetStartPath(string build_start_path, Action<string> progress_report)
         {
-            if(!Directory.Exists(build_start_path))
+            if (!Directory.Exists(build_start_path))
             {
                 return;
             }
@@ -351,28 +55,21 @@ namespace GS.AssetBundlePacker
             List<string> old_native_folders = new List<string>(old_native_path.Split(new char[] { '/' }, StringSplitOptions.RemoveEmptyEntries));
 
             AssetBundleBuildData.AssetBuild.Element root = null;
-            CompareBuildData(ref root, Data.Assets.Root
-                , new_native_folders, old_native_folders
-                , EditorCommon.ASSET_START_PATH, progress_report);
+            CompareBuildData(ref root, Data.Assets.Root, new_native_folders, old_native_folders, EditorCommon.ASSET_START_PATH, progress_report);
 
             Data.Assets.Root = root;
             Data.BuildStartLocalPath = build_start_path;
         }
 
-        /// <summary>
-        /// 生成默认数据
-        /// </summary>
+        /// <summary>生成默认数据</summary>
         public void GenerateDefaultData(Action<string> progress_report)
         {
             Data.BuildStartLocalPath = Common.PROJECT_ASSET_ROOT_NAME;
-            Data.Assets.Root = GenerateAssetBundleRuleData(EditorCommon.ASSET_START_PATH
-                                , emAssetBundleNameRule.None, progress_report);
+            Data.Assets.Root = GenerateAssetBundleRuleData(EditorCommon.ASSET_START_PATH, emAssetBundleNameRule.None, progress_report);
             Data.Scenes = GenerateSceneRuleData(progress_report);
         }
 
-        /// <summary>
-        /// 校正数据
-        /// </summary>
+        /// <summary>校正数据</summary>
         public void MatchData(Action<string> progress_report)
         {
             string path = EditorCommon.RelativeToAbsolutePath(Data.BuildStartLocalPath);
@@ -380,15 +77,11 @@ namespace GS.AssetBundlePacker
             MatchSceneRuleData(ref Data.Scenes, progress_report);
         }
 
-        /// <summary>
-        /// 同步配置至ResourcesManifestData
-        /// </summary>
+        /// <summary>同步配置至ResourcesManifestData</summary>
         public void SyncConfigTo(ResourcesManifestData res)
         {
-            if(res == null)
-            {
+            if (res == null)
                 return;
-            }
 
             res.strVersion = Data.strVersion;
             res.IsAllCompress = Data.IsAllCompress;
@@ -396,18 +89,16 @@ namespace GS.AssetBundlePacker
 
             string path = Data.BuildStartLocalPath.ToLower();
             SyncAssetConfig(path, Data.Assets.Root, res, true);
-            if(Data.Scenes.Scenes.Count > 0)
+            if (Data.Scenes.Scenes.Count > 0)
             {
-                foreach(var element in Data.Scenes.Scenes)
+                foreach (var element in Data.Scenes.Scenes)
                 {
                     SyncSceneAssetConfig(element, res, true);
                 }
             }
         }
 
-        /// <summary>
-        /// 从ResourcesManifestData同步配置
-        /// </summary>
+        /// <summary>从ResourcesManifestData同步配置</summary>
         public void SyncConfigFrom(ResourcesManifestData res)
         {
             if (res == null)
@@ -431,12 +122,8 @@ namespace GS.AssetBundlePacker
             }
         }
 
-        /// <summary>
-        /// 遍历指定目录以及子目录，生成默认数据
-        /// </summary>
-        static AssetBundleBuildData.AssetBuild.Element GenerateAssetBundleRuleData(string path
-                                        , emAssetBundleNameRule rule
-                                        , Action<string> progress_report)
+        /// <summary>遍历指定目录以及子目录，生成默认数据</summary>
+        static AssetBundleBuildData.AssetBuild.Element GenerateAssetBundleRuleData(string path, emAssetBundleNameRule rule, Action<string> progress_report)
         {
             try
             {
@@ -490,22 +177,20 @@ namespace GS.AssetBundlePacker
 
                 return result;
             }
-            catch (System.Exception e)
+            catch (Exception e)
             {
                 Debug.LogWarning(e.Message);
             }
 
             return null;
         }
+        /// <summary>辅助操作缓存</summary>
+        static Dictionary<string, uint> s_folder_dic_temp_;
+        /// <summary>辅助操作缓存</summary>
+        static Dictionary<string, uint> s_file_dic_temp_;          
 
-        static Dictionary<string, uint> s_folder_dic_temp_;        ///< 辅助操作缓存
-        static Dictionary<string, uint> s_file_dic_temp_;          ///< 辅助操作缓存
-
-        /// <summary>
-        ///   调整数据（匹配现有的文件&文件夹结构，删除无用的数据)
-        /// </summary>
-        static void MatchAssetRuleElement(string path, AssetBundleBuildData.AssetBuild.Element element
-            , Action<string> progress_report)
+        /// <summary>调整数据（匹配现有的文件&文件夹结构，删除无用的数据)</summary>
+        static void MatchAssetRuleElement(string path, AssetBundleBuildData.AssetBuild.Element element, Action<string> progress_report)
         {
             try
             {
@@ -610,9 +295,7 @@ namespace GS.AssetBundlePacker
                     if (pair.Value == bit_1)
                     {
                         string full_name = path + "/" + pair.Key;
-                        element.Add(GenerateAssetBundleRuleData(full_name
-                                        , emAssetBundleNameRule.None
-                                        , progress_report));
+                        element.Add(GenerateAssetBundleRuleData(full_name, emAssetBundleNameRule.None, progress_report));
                     }
                 }
 
@@ -622,9 +305,7 @@ namespace GS.AssetBundlePacker
                     if (pair.Value == bit_1)
                     {
                         string full_name = path + "/" + pair.Key;
-                        element.Add(GenerateAssetBundleRuleData(full_name
-                                        , emAssetBundleNameRule.None
-                                        , progress_report));
+                        element.Add(GenerateAssetBundleRuleData(full_name, emAssetBundleNameRule.None, progress_report));
                     }
                 }
 
@@ -644,15 +325,13 @@ namespace GS.AssetBundlePacker
                 //重新排序
                 element.SortChildren();
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 Debug.LogWarning(ex.Message);
             }
         }
 
-        /// <summary>
-        ///   生成场景默认数据
-        /// </summary>
+        /// <summary>生成场景默认数据</summary>
         static AssetBundleBuildData.SceneBuild GenerateSceneRuleData(Action<string> progress_report)
         {
             try
@@ -671,17 +350,14 @@ namespace GS.AssetBundlePacker
                 }
                 return scenes;
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 Debug.LogWarning(ex.Message);
             }
-
             return new AssetBundleBuildData.SceneBuild();
         }
 
-        /// <summary>
-        ///   调整场景数据（匹配最新的场景目录,删除无用数据）
-        /// </summary>
+        /// <summary>调整场景数据（匹配最新的场景目录,删除无用数据）</summary>
         static void MatchSceneRuleData(ref AssetBundleBuildData.SceneBuild old, Action<string> progress_report)
         {
             AssetBundleBuildData.SceneBuild rules = new AssetBundleBuildData.SceneBuild();
@@ -697,9 +373,9 @@ namespace GS.AssetBundlePacker
                     {
                         return elem.ScenePath == f.FullName;
                     });
-                    if(scene == null)
+                    if (scene == null)
                     {
-                        scene = new AssetBundleBuildData.SceneBuild.Element() { ScenePath = f.FullName};
+                        scene = new AssetBundleBuildData.SceneBuild.Element() { ScenePath = f.FullName };
                     }
                     rules.Scenes.Add(scene);
                 }
@@ -708,13 +384,10 @@ namespace GS.AssetBundlePacker
             }
         }
 
-        /// <summary>
-        /// 同步资源配置
-        /// </summary>
-        static void SyncAssetConfig(string path, AssetBundleBuildData.AssetBuild.Element element, ResourcesManifestData data
-            , bool is_write)
+        /// <summary>同步资源配置</summary>
+        static void SyncAssetConfig(string path, AssetBundleBuildData.AssetBuild.Element element, ResourcesManifestData data, bool is_write)
         {
-            if(element.Rule == (int)emAssetBundleNameRule.Ignore)
+            if (element.Rule == (int)emAssetBundleNameRule.Ignore)
             {
                 return;
             }
@@ -741,7 +414,7 @@ namespace GS.AssetBundlePacker
 
             if (element.Children != null && element.Children.Count > 0)
             {
-                
+
                 foreach (var child in element.Children)
                 {
                     string child_path = path + "/" + child.Name.ToLower();
@@ -750,11 +423,8 @@ namespace GS.AssetBundlePacker
             }
         }
 
-        /// <summary>
-        /// 同步场景资源配置
-        /// </summary>
-        static void SyncSceneAssetConfig(AssetBundleBuildData.SceneBuild.Element element, ResourcesManifestData data
-            , bool is_write)
+        /// <summary>同步场景资源配置</summary>
+        static void SyncSceneAssetConfig(AssetBundleBuildData.SceneBuild.Element element, ResourcesManifestData data, bool is_write)
         {
             string localPath = EditorCommon.AbsoluteToRelativePath(element.ScenePath);
             localPath = localPath.ToLower();
@@ -783,9 +453,7 @@ namespace GS.AssetBundlePacker
             }
         }
 
-        /// <summary>
-        /// 对比新旧打包资源起始路径，返回最新的配置数据
-        /// </summary>
+        /// <summary>对比新旧打包资源起始路径，返回最新的配置数据</summary>
         static void CompareBuildData(ref AssetBundleBuildData.AssetBuild.Element result
             , AssetBundleBuildData.AssetBuild.Element old_root
             , List<string> new_native_folder_list
@@ -813,9 +481,7 @@ namespace GS.AssetBundlePacker
                     path = path + "/" + new_native_folder_list[0];
                     new_native_folder_list.RemoveAt(0);
                     old_native_folder_list.RemoveAt(0);
-                    CompareBuildData(ref result, old_root
-                        , new_native_folder_list, old_native_folder_list
-                        , path, progress_report);
+                    CompareBuildData(ref result, old_root, new_native_folder_list, old_native_folder_list, path, progress_report);
                 }
                 else
                 {
@@ -823,8 +489,7 @@ namespace GS.AssetBundlePacker
                     {
                         path = path + "/" + name;
                     }
-                    result = GenerateAssetBundleRuleData(path
-                                , emAssetBundleNameRule.None, progress_report);
+                    result = GenerateAssetBundleRuleData(path, emAssetBundleNameRule.None, progress_report);
                     return;
                 }
             }
@@ -832,22 +497,17 @@ namespace GS.AssetBundlePacker
             //新路径是旧路径的父路径，保留旧的配置数据并生成其它的配置数据
             if (new_native_folder_list == null)
             {
-                result = GenerateAssetBundleRuleData(path
-                                , emAssetBundleNameRule.None, progress_report);
+                result = GenerateAssetBundleRuleData(path, emAssetBundleNameRule.None, progress_report);
 
                 var temp = result;
                 for (int i = 0; i < old_native_folder_list.Count; ++i)
                 {
                     if (temp == null)
-                    {
                         break;
-                    }
                     temp = temp.FindFolderElement(old_native_folder_list[i]);
                 }
                 if (temp != null)
-                {
                     old_root.CopyTo(temp);
-                }
 
                 return;
             }
@@ -859,9 +519,7 @@ namespace GS.AssetBundlePacker
                 for (int i = 0; i < new_native_folder_list.Count; ++i)
                 {
                     if (temp == null)
-                    {
                         break;
-                    }
                     temp = temp.FindFolderElement(new_native_folder_list[i]);
                 }
                 result = temp;
@@ -872,12 +530,205 @@ namespace GS.AssetBundlePacker
                     {
                         path = path + "/" + name;
                     }
-                    result = GenerateAssetBundleRuleData(path
-                                , emAssetBundleNameRule.None, progress_report);
+                    result = GenerateAssetBundleRuleData(path, emAssetBundleNameRule.None, progress_report);
                 }
                 return;
             }
         }
+    }
+    public class AssetBundleBuildData
+    {
+        /// <summary>Asset's build data</summary>
+        public class AssetBuild
+        {
+            /// <summary>资源结点</summary>
+            public class Element
+            {
+                /// <summary>名称</summary>
+                public string Name;
+                /// <summary>是否文件夹</summary>
+                public bool IsFolder;
+                /// <summary>规则</summary>
+                public int Rule;
+
+                /// <summary>是否压缩</summary>
+                public bool IsCompress;
+                /// <summary>是否打包到安装包中</summary>
+                public bool IsNative;
+                /// <summary>是否常驻内存</summary>
+                public bool IsPermanent;
+                /// <summary>启动时加载</summary>
+                public bool IsStartupLoad;
+
+                /// <summary>子对象</summary>
+                public List<Element> Children;
+
+                public Element() { }
+
+                public Element(string name)
+                {
+                    Name = name;
+                }
+
+                /// <summary>增加一个子对象</summary>
+                public void Add(Element child)
+                {
+                    if (Children == null)
+                        Children = new List<Element>();
+
+                    Children.Add(child);
+                }
+
+                /// <summary>查找文件夹</summary>
+                public Element FindFolderElement(string name)
+                {
+                    if (Children == null)
+                        return null;
+                    return Children.Find((elem) =>
+                    {
+                        return elem.Name == name && elem.IsFolder;
+                    });
+                }
+
+                /// <summary>查找文件</summary>
+                public Element FindFileElement(string name)
+                {
+                    if (Children == null)
+                        return null;
+                    return Children.Find((elem) =>
+                    {
+                        return elem.Name == name && !elem.IsFolder;
+                    });
+                }
+
+                /// <summary>子数量</summary>
+                public int Count()
+                {
+                    int count = 0;
+                    if (Children != null)
+                    {
+                        count += Children.Count;
+                        for (int i = 0; i < Children.Count; ++i)
+                        {
+                            count += Children[i].Count();
+                        }
+                    }
+
+                    return count;
+                }
+
+                /// <summary>拷贝</summary>
+                public void CopyTo(Element elem)
+                {
+                    elem.Name = Name;
+                    elem.IsFolder = IsFolder;
+                    elem.Rule = Rule;
+                    elem.IsCompress = IsCompress;
+                    elem.IsNative = IsNative;
+                    elem.IsPermanent = IsPermanent;
+                    elem.Children = new List<Element>(Children);
+                }
+
+                public override bool Equals(object obj)
+                {
+                    if (obj == null)
+                        return false;
+                    if (obj.GetType() != this.GetType())
+                        return false;
+
+                    Element other = obj as Element;
+                    if (this.Name != other.Name)
+                        return false;
+                    if (this.IsFolder != other.IsFolder)
+                        return false;
+                    if (this.Rule != other.Rule)
+                        return false;
+                    if (this.Children == null && other.Children != null)
+                        return false;
+                    if (this.Children != null && other.Children == null)
+                        return false;
+                    if (this.Children != null && other.Children != null)
+                    {
+                        if (this.Children.Count != other.Children.Count)
+                            return false;
+
+                        int count = this.Children.Count;
+                        for (int i = 0; i < count; ++i)
+                        {
+                            if (!this.Children[i].Equals(other.Children[i]))
+                                return false;
+                        }
+                    }
+
+                    return true;
+                }
+
+                public override int GetHashCode()
+                {
+                    return Name.GetHashCode();
+                }
+
+                /// <summary>
+                /// 排序
+                /// 1.优先显示文件夹(以字符顺序排序)
+                /// 2.其次显示文件(以字符顺序排序)
+                /// </summary>
+                public void SortChildren()
+                {
+                    if (Children != null && Children.Count > 1)
+                        Children.Sort(_ComparisonElement);
+                }
+
+                int _ComparisonElement(Element x, Element y)
+                {
+                    if ((x.IsFolder && y.IsFolder) || (!x.IsFolder && !y.IsFolder))
+                        return string.Compare(x.Name, y.Name, StringComparison.Ordinal);
+                    else if (x.IsFolder)
+                        return -1;
+                    else if (y.IsFolder)
+                        return 1;
+
+                    return -1;
+                }
+            }
+
+            public Element Root;
+        }
+
+        /// <summary>Scene's build data</summary>
+        public class SceneBuild
+        {
+            public class Element
+            {
+                /// <summary>场景路径</summary>
+                public string ScenePath;
+                /// <summary>是否打包</summary>
+                public bool IsBuild;
+                /// <summary>是否压缩</summary>
+                public bool IsCompress;
+                /// <summary>是否打包到安装包中</summary>
+                public bool IsNative;
+            }
+            public List<Element> Scenes = new List<Element>();
+        }
+
+        /// <summary>版本号</summary>
+        public string strVersion;
+
+        /// <summary>AssetBundle打包起始相对路径</summary>
+        public string BuildStartLocalPath = Common.PROJECT_ASSET_ROOT_NAME;
+
+        /// <summary>是否打包所有AssetBundle至安装包</summary>
+        public bool IsAllNative;
+
+        /// <summary>是否所有AssetBundle都压缩</summary>
+        public bool IsAllCompress;
+
+        /// <summary>资源</summary>
+        public AssetBuild Assets = new AssetBuild();
+
+        /// <summary>场景</summary>
+        public SceneBuild Scenes = new SceneBuild();
     }
 }
 
