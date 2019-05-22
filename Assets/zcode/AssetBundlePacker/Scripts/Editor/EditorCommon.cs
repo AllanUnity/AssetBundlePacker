@@ -20,10 +20,10 @@ namespace GS.AssetBundlePacker
         /// <summary>编辑器环境下默认AssetBundle存放路径</summary>
         public static readonly string BUILD_PATH = ProjectDirectory + Common.ROOT_FOLDER_NAME;
 
-        /// <summary>编辑器环镜下资源起始路径</summary>
+        /// <summary>编辑器环镜下资源起始路径dataPath</summary>
         public static readonly string ASSET_START_PATH = Application.dataPath;
 
-        /// <summary>编辑器环镜下场景起始路径</summary>
+        /// <summary>编辑器环镜下场景起始路径Scenes</summary>
         public static readonly string SCENE_START_PATH = Application.dataPath + "/Scenes";
 
         /// <summary>编辑器环镜下AssetBundleBuild.rule保存路径</summary>
@@ -55,11 +55,11 @@ namespace GS.AssetBundlePacker
             }
         }
 
-        /// <summary>判断是否需要忽略</summary>
+        /// <summary>判断是否需要忽略--文件后缀</summary>
         public static bool IsIgnoreFile(string file_name)
         {
             string extension = System.IO.Path.GetExtension(file_name);
-            foreach (string ignore in EditorCommon.IGNORE_FILE_EXTENSION_ARRAY)
+            foreach (string ignore in IGNORE_FILE_EXTENSION_ARRAY)
             {
                 if (extension == ignore)
                     return true;
@@ -68,7 +68,7 @@ namespace GS.AssetBundlePacker
             return false;
         }
 
-        /// <summary>判断是否需要忽略</summary>
+        /// <summary>判断是否需要忽略--文件夹名称</summary>
         public static bool IsIgnoreFolder(string full_name)
         {
             string name = System.IO.Path.GetFileName(full_name);

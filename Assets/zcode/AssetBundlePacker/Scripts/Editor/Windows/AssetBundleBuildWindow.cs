@@ -11,6 +11,7 @@ namespace GS.AssetBundlePacker
     {
         /// <summary>界面单例</summary>
         public static AssetBundleBuildWindow Instance = null;
+        #region Class Or Enum
         /// <summary>打包方式</summary>
         enum emBuildType
         {
@@ -42,7 +43,7 @@ namespace GS.AssetBundlePacker
         /// <summary>Asset节点</summary>
         class AssetNode : GUILayoutMultiSelectGroup.Node
         {
-            /// <summary>数据</summary>
+            /// <summary>配置数据</summary>
             public AssetBundleBuildData.AssetBuild.Element Element;
 
             /// <summary>是否展开</summary>
@@ -229,8 +230,11 @@ namespace GS.AssetBundlePacker
             }
         }
 
+        #endregion
+
         public const int ASSET_NODE_LAYER_SPACE = 10;
 
+        /// <summary>AssetBundle打包规则配置数据</summary>
         private AssetBundleBuild asset_bundle_build_;
 
         /// <summary>打包选项</summary>
@@ -244,15 +248,13 @@ namespace GS.AssetBundlePacker
 
         /// <summary>资源打包起始路径</summary>
         string build_start_full_path_;
-
-        [MenuItem("AssetBundle/Windows/AssetBundle Build Window")]
+        #region Editor Function
+        [MenuItem("AssetBundle/Windows/打包AssetBundle")]
         public static void Open()
         {
-            var win = EditorWindow.GetWindow<AssetBundleBuildWindow>("AB Build");
+            var win = EditorWindow.GetWindow<AssetBundleBuildWindow>("打包AssetsBundle");//Editor窗口名称
             if (win != null)
-            {
                 win.Show();
-            }
         }
 
         void Awake()
@@ -285,23 +287,19 @@ namespace GS.AssetBundlePacker
             }
         }
 
+        #endregion
 
-
-        /// <summary>重新载入数据</summary>
-        public void SyncConfigForm(ResourcesManifestData res)
-        {
-            asset_bundle_build_.SyncConfigFrom(res);
-        }
-
+        /// <summary>获取资源</summary>
         void LoadData()
         {
             asset_bundle_build_ = new AssetBundleBuild();
-            if (!asset_bundle_build_.Load(EditorCommon.ASSETBUNDLE_BUILD_RULE_FILE_PATH))
+            //查看assetbundlebuild.rule的打包配置规则数据是否存在,并获取内容
+            if (!asset_bundle_build_.Load(EditorCommon.ASSETBUNDLE_BUILD_RULE_FILE_PATH))//编辑器环镜下AssetBundleBuild.rule保存路径
             {
                 if (EditorUtility.DisplayDialog("初始化打包配置文件", "当前打包配置文件不存在, 需要生成默认配置文件！", "生成"))
                 {
                     float total = 0;
-                    if (Directory.Exists(EditorCommon.SCENE_START_PATH))
+                    if (Directory.Exists(EditorCommon.SCENE_START_PATH))//场景路径
                     {
                         string[] files = Directory.GetFiles(EditorCommon.SCENE_START_PATH, "*.unity", SearchOption.AllDirectories);
                         total += files.Length;
@@ -355,6 +353,17 @@ namespace GS.AssetBundlePacker
                 Build();
             }
         }
+
+        void Build()
+        {
+            AssetNodeGroup group = new AssetNodeGroup();
+            group.Root = new AssetNode();
+            group.Root.Build(asset_bundle_build_.Data.Assets.Root, 0);
+            gui_multi_select_ = new GUILayoutMultiSelectGroup(group);
+
+            build_start_full_path_ = asset_bundle_build_.BuildStartFullPath;
+        }
+
 
         /// <summary>修改打包资源起始路径</summary>
         void ModifyAssetStartPath()
@@ -419,16 +428,7 @@ namespace GS.AssetBundlePacker
             EditorUtility.ClearProgressBar();
         }
 
-        void Build()
-        {
-            AssetNodeGroup group = new AssetNodeGroup();
-            group.Root = new AssetNode();
-            group.Root.Build(asset_bundle_build_.Data.Assets.Root, 0);
-            gui_multi_select_ = new GUILayoutMultiSelectGroup(group);
-
-            build_start_full_path_ = asset_bundle_build_.BuildStartFullPath;
-        }
-
+      
         /// <summary>修改打包安装包配置</summary>
         void ModifyPackNativeConfig(bool set)
         {
@@ -576,8 +576,8 @@ namespace GS.AssetBundlePacker
             count = asset_bundle_build_.Data.Assets.Root.Count();
             RefreshGranularity(granularity_table, granularity_details_table, path, group.Root, (name) =>
             {
-                if (progress_report != null) 
-                    progress_report("正在刷新 " + name, ++current / count); 
+                if (progress_report != null)
+                    progress_report("正在刷新 " + name, ++current / count);
             });
 
         }
@@ -677,7 +677,7 @@ namespace GS.AssetBundlePacker
         }
 
         #region Draw
-
+        /// <summary>常规</summary>
         void DrawGeneral()
         {
             GUILayout.BeginVertical(GUI.skin.FindStyle("flow background"), GUILayout.MaxHeight(80f));
@@ -752,25 +752,19 @@ namespace GS.AssetBundlePacker
             GUILayout.EndVertical();
 
             if (is_all_native != asset_bundle_build_.Data.IsAllNative)
-            {
                 ModifyPackNativeConfig(is_all_native);
-            }
+
             if (is_all_compress != asset_bundle_build_.Data.IsAllCompress)
-            {
                 ModifyCompressConfig(is_all_compress);
-            }
+
             if (is_show_granularity_details)
-            {
                 LoadGranularityInfoAndDisplayProgress(true);
-            }
+
             if (is_modify_build_path)
-            {
                 ModifyAssetStartPath();
-            }
+
             if (is_save_data)
-            {
                 SaveData();
-            }
             if (is_running_ab_name_tool)
             {
                 SaveData();
@@ -791,7 +785,7 @@ namespace GS.AssetBundlePacker
                 BuildingAssetBundle(emBuildType.IOS);
             }
         }
-
+        /// <summary>资源</summary>
         void DrawAssets()
         {
             GUILayout.Space(3f);
@@ -814,7 +808,7 @@ namespace GS.AssetBundlePacker
             if (is_modify_rule)
                 ModifyRuleForSelectTreeNodes(rule, is_compress, is_native, is_permanent, is_startup_load);
         }
-
+        /// <summary>场景</summary>
         void DrawScenes()
         {
             GUILayout.BeginHorizontal();
@@ -911,5 +905,10 @@ namespace GS.AssetBundlePacker
             return false;
         }
         #endregion
+        /// <summary>重新载入数据</summary>
+        public void SyncConfigForm(ResourcesManifestData res)
+        {
+            asset_bundle_build_.SyncConfigFrom(res);
+        }
     }
 }

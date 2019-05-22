@@ -1,7 +1,4 @@
 ﻿/***************************************************************
- * Copyright 2016 By Zhang Minglin
- * Author: Zhang Minglin
- * Create: 2016/12/20
  * Note  : 仅适用于GUI自动布局的多选组， 适用如编辑器窗口绘制
  *         1. 支持Ctrl与Shift多选控制
  *         2. 支持自定义渲染方式
@@ -10,9 +7,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-/// <summary>
-/// 
-/// </summary>
 public class GUILayoutMultiSelectGroup
 {
     /// <summary>节点</summary>

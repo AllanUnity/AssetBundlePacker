@@ -8,7 +8,7 @@ namespace GS.AssetBundlePacker
     /// <summary>AssetBundle打包规则配置数据</summary>
     public class AssetBundleBuild
     {
-        /// <summary>数据</summary>
+        /// <summary>规则数据</summary>
         public AssetBundleBuildData Data;
 
         /// <summary>AssetBundle打包起始全局路径</summary>
@@ -27,7 +27,9 @@ namespace GS.AssetBundlePacker
         {
             Data = new AssetBundleBuildData();
         }
-
+        /// <summary>获取打包规则配置数据</summary>
+        /// <param name="file_name"></param>
+        /// <returns></returns>
         public bool Load(string file_name)
         {
             return SimpleJsonReader.ReadFromFile<AssetBundleBuildData>(ref Data, file_name);
@@ -65,6 +67,7 @@ namespace GS.AssetBundlePacker
         public void GenerateDefaultData(Action<string> progress_report)
         {
             Data.BuildStartLocalPath = Common.PROJECT_ASSET_ROOT_NAME;
+            Debug.Log(EditorCommon.ASSET_START_PATH);
             Data.Assets.Root = GenerateAssetBundleRuleData(EditorCommon.ASSET_START_PATH, emAssetBundleNameRule.None, progress_report);
             Data.Scenes = GenerateSceneRuleData(progress_report);
         }
@@ -127,12 +130,13 @@ namespace GS.AssetBundlePacker
         {
             try
             {
-                AssetBundleBuildData.AssetBuild.Element result = null;
+                AssetBundleBuildData.AssetBuild.Element result = null;//资源节点
 
                 DirectoryInfo dir_info = new DirectoryInfo(path);
                 if (dir_info.Exists)
                 {
-                    if (progress_report != null) { progress_report(path); }
+                    if (progress_report != null)
+                        progress_report(path);
 
                     if (!EditorCommon.IsIgnoreFolder(path))
                     {
@@ -160,7 +164,7 @@ namespace GS.AssetBundlePacker
                             if (child != null)
                                 result.Add(child);
                         }
-                        result.SortChildren();
+                        result.SortChildren();//排序
                     }
                 }
                 else if (File.Exists(path))
@@ -184,10 +188,11 @@ namespace GS.AssetBundlePacker
 
             return null;
         }
+
         /// <summary>辅助操作缓存</summary>
         static Dictionary<string, uint> s_folder_dic_temp_;
         /// <summary>辅助操作缓存</summary>
-        static Dictionary<string, uint> s_file_dic_temp_;          
+        static Dictionary<string, uint> s_file_dic_temp_;
 
         /// <summary>调整数据（匹配现有的文件&文件夹结构，删除无用的数据)</summary>
         static void MatchAssetRuleElement(string path, AssetBundleBuildData.AssetBuild.Element element, Action<string> progress_report)
@@ -198,27 +203,20 @@ namespace GS.AssetBundlePacker
                 if (!dir_info.Exists)
                     return;
 
-                if (progress_report != null) { progress_report(path); }
+                if (progress_report != null) progress_report(path);
 
                 uint bit_0 = 0x1;   // 存在数据中
                 uint bit_1 = 0x2;   // 存在文件或文件夹
 
                 if (s_folder_dic_temp_ == null)
-                {
                     s_folder_dic_temp_ = new Dictionary<string, uint>(512);
-                }
                 else
-                {
                     s_folder_dic_temp_.Clear();
-                }
+
                 if (s_file_dic_temp_ == null)
-                {
                     s_file_dic_temp_ = new Dictionary<string, uint>(512);
-                }
                 else
-                {
                     s_file_dic_temp_.Clear();
-                }
 
                 if (element.Children != null && element.Children.Count > 0)
                 {
@@ -368,7 +366,8 @@ namespace GS.AssetBundlePacker
                 foreach (var f in files)
                 {
                     string localName = EditorCommon.AbsoluteToRelativePath(f.FullName);
-                    if (progress_report != null) { progress_report(f.FullName); }
+                    if (progress_report != null)
+                        progress_report(f.FullName);
                     var scene = old.Scenes.Find((elem) =>
                     {
                         return elem.ScenePath == f.FullName;
@@ -536,9 +535,10 @@ namespace GS.AssetBundlePacker
             }
         }
     }
+    /// <summary>配置数据</summary>
     public class AssetBundleBuildData
     {
-        /// <summary>Asset's build data</summary>
+        /// <summary>资源构建数据</summary>
         public class AssetBuild
         {
             /// <summary>资源结点</summary>
@@ -691,11 +691,11 @@ namespace GS.AssetBundlePacker
                     return -1;
                 }
             }
-
+            /// <summary>资源结点</summary>
             public Element Root;
         }
 
-        /// <summary>Scene's build data</summary>
+        /// <summary>场景构建数据</summary>
         public class SceneBuild
         {
             public class Element
@@ -715,7 +715,7 @@ namespace GS.AssetBundlePacker
         /// <summary>版本号</summary>
         public string strVersion;
 
-        /// <summary>AssetBundle打包起始相对路径</summary>
+        /// <summary>AssetBundle打包起始相对路径Assets</summary>
         public string BuildStartLocalPath = Common.PROJECT_ASSET_ROOT_NAME;
 
         /// <summary>是否打包所有AssetBundle至安装包</summary>

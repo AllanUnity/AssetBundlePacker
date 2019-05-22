@@ -7,9 +7,9 @@ namespace GS.AssetBundlePacker
     /// <summary>AssetBundle管理窗口</summary>
     public class AssetBundleBrowseWindow : EditorWindow
     {
-        /// <summary>
-        /// 
-        /// </summary>
+        /// <summary>界面单例</summary>
+        public static AssetBundleBrowseWindow Instance = null;
+        #region Class 
         class SelectResultStatus
         {
             /// <summary>
@@ -31,19 +31,10 @@ namespace GS.AssetBundlePacker
             public bool IsStartupLoad;
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
         class NodeGroup : GUILayoutMultiSelectGroup.NodeGroup
         {
-            /// <summary>
-            /// 
-            /// </summary>
             public List<Node> Nodes = new List<Node>();
 
-            /// <summary>
-            /// 
-            /// </summary>
             public override GUILayoutMultiSelectGroup.OperateResult Draw(float width)
             {
                 GUILayoutMultiSelectGroup.OperateResult result = null;
@@ -57,10 +48,6 @@ namespace GS.AssetBundlePacker
 
                 return result;
             }
-
-            /// <summary>
-            /// 
-            /// </summary>
             public override List<GUILayoutMultiSelectGroup.Node> GetRange(int begin, int end)
             {
                 List<GUILayoutMultiSelectGroup.Node> temp = new List<GUILayoutMultiSelectGroup.Node>();
@@ -119,7 +106,7 @@ namespace GS.AssetBundlePacker
                 GUI.backgroundColor = Color.white;
 
                 SelectResultStatus.Operate op = SelectResultStatus.Operate.None;
-                if(is_compress != AssetBundle.IsCompress)
+                if (is_compress != AssetBundle.IsCompress)
                     op = SelectResultStatus.Operate.Compress;
                 if (is_native != AssetBundle.IsNative)
                     op = SelectResultStatus.Operate.Native;
@@ -148,24 +135,47 @@ namespace GS.AssetBundlePacker
                 return null;
             }
         }
-
-        /// <summary>
-        ///   AssetBundle信息描述数据
-        /// </summary>
+        #endregion
+        /// <summary>AssetBundle信息描述数据</summary>
         public ResourcesManifest Manifest;
 
-        /// <summary>
-        /// 
-        /// </summary>
         private GUILayoutMultiSelectGroup gui_multi_select_;
 
-        /// <summary>
-        ///   载入数据
-        /// </summary>
+        void Awake()
+        {
+            LoadData();
+        }
+
+        void OnEnable()
+        {
+            LoadData();
+            Instance = this;
+        }
+
+        void Update() { }
+
+        void OnInspectorUpdate()
+        {
+            //Debug.Log("窗口面板的更新");
+            //这里开启窗口的重绘，不然窗口信息不会刷新
+            this.Repaint();
+        }
+
+        [MenuItem("AssetBundle/Windows/配置AssetBundle")]
+        public static void Open()
+        {
+            var win = EditorWindow.GetWindow<AssetBundleBrowseWindow>(false, "AssetBundle Browse", true);
+            if (win != null)
+            {
+                win.Show();
+            }
+        }
+
+        /// <summary>载入数据</summary>
         public bool LoadData(ResourcesManifest manifest = null)
         {
             bool result = false;
-            if(manifest == null)
+            if (manifest == null)
             {
                 Manifest = new ResourcesManifest();
                 result = Manifest.Load(EditorCommon.RESOURCES_MANIFEST_FILE_PATH);
@@ -181,9 +191,7 @@ namespace GS.AssetBundlePacker
             return result;
         }
 
-        /// <summary>
-        ///   保存数据
-        /// </summary>
+        /// <summary>保存数据</summary>
         private bool SaveData()
         {
             if (Manifest != null)
@@ -192,9 +200,6 @@ namespace GS.AssetBundlePacker
             return false;
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
         private void Build()
         {
             NodeGroup group = new NodeGroup();
@@ -217,14 +222,12 @@ namespace GS.AssetBundlePacker
             gui_multi_select_ = new GUILayoutMultiSelectGroup(group);
         }
 
-        /// <summary>
-        /// 执行已做的修改
-        /// </summary>
+        /// <summary>执行已做的修改</summary>
         void ExecuteModified()
         {
             ResourcesManifest old_resources_manifest = new ResourcesManifest();
             old_resources_manifest.Load(EditorCommon.RESOURCES_MANIFEST_FILE_PATH);
-            
+
             //压缩AB包
             bool compress = BuildAssetBundle.CompressAssetBundles(old_resources_manifest
                                                                     , Manifest);
@@ -234,7 +237,7 @@ namespace GS.AssetBundlePacker
             bool copy = save ? BuildAssetBundle.CopyNativeAssetBundleToStreamingAssets(Manifest) : false;
             bool succeed = compress && copy && save;
 
-            if(succeed)
+            if (succeed)
             {
                 //同步数据
                 if (AssetBundleBuildWindow.Instance != null)
@@ -262,18 +265,16 @@ namespace GS.AssetBundlePacker
         }
 
         #region Select Operate
-        /// <summary>
-        /// 更新选中操作
-        /// </summary>
+        /// <summary>更新选中操作</summary>
         void UpdateSelectOperate(GUILayoutMultiSelectGroup.OperateResult result)
         {
             if (result != null)
             {
                 SelectResultStatus status = result.Status as SelectResultStatus;
-                if (status.Op != SelectResultStatus.Operate.None 
+                if (status.Op != SelectResultStatus.Operate.None
                     && gui_multi_select_.SelectNodes != null)
                 {
-                    for(int i = 0 ; i < gui_multi_select_.SelectNodes.Count ; ++i)
+                    for (int i = 0; i < gui_multi_select_.SelectNodes.Count; ++i)
                     {
                         Node node = gui_multi_select_.SelectNodes[i] as Node;
                         if (status.Op == SelectResultStatus.Operate.Compress)
@@ -290,9 +291,6 @@ namespace GS.AssetBundlePacker
         }
         #endregion
 
-        /// <summary>
-        ///   
-        /// </summary>
         void OnGUI()
         {
             GUILayout.Space(3f);
@@ -338,54 +336,5 @@ namespace GS.AssetBundlePacker
             if (execute)
                 ExecuteModified();
         }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        void Awake()
-        {
-            LoadData();
-        }
-
-        /// <summary>
-        ///   
-        /// </summary>
-        void OnEnable()
-        {
-            LoadData();
-            Instance = this;
-        }
-
-        /// <summary>
-        ///   
-        /// </summary>
-        void Update()
-        {
-        } 
-
-        /// <summary>
-        ///   
-        /// </summary>
-        void OnInspectorUpdate()
-        {
-            //Debug.Log("窗口面板的更新");
-            //这里开启窗口的重绘，不然窗口信息不会刷新
-            this.Repaint();
-        }
-
-        [MenuItem("AssetBundle/Windows/AssetBundle Browse Window")]
-        public static void Open()
-        {
-            var win = EditorWindow.GetWindow<AssetBundleBrowseWindow>(false, "AssetBundle Browse", true);
-            if(win != null)
-            {
-                win.Show();
-            }
-        }
-
-        /// <summary>
-        /// 界面单例
-        /// </summary>
-        public static AssetBundleBrowseWindow Instance = null;
     }
 }

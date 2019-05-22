@@ -7,47 +7,31 @@ namespace GS.AssetBundlePacker
     /// <summary>资源包编辑窗口</summary>
     public class ResourcesPackageWindow : EditorWindow
     {
-        /// <summary>
-        ///   AssetBundle包数据
-        /// </summary>
+        /// <summary>AssetBundle包数据</summary>
         public ResourcesPackages Packages;
 
-        /// <summary>
-        ///   最后操作的AssetBundle包
-        /// </summary>
+        /// <summary>最后操作的AssetBundle包</summary>
         private ResourcesPackagesData.Package lastest_pack_;
 
-        /// <summary>
-        ///   
-        /// </summary>
         private string current_pack_name_ = "";
 
-        /// <summary>
-        ///   
-        /// </summary>
         private Vector2 scroll_ = Vector2.zero;
 
-        /// <summary>
-        ///   载入数据
-        /// </summary>
+        /// <summary>载入数据</summary>
         private void LoadData()
         {
             Packages = new ResourcesPackages();
             Packages.Load(EditorCommon.RESOURCES_PACKAGE_FILE_PATH);
         }
 
-        /// <summary>
-        ///   保存数据
-        /// </summary>
+        /// <summary>保存数据</summary>
         private void SaveData()
         {
             if (Packages != null)
                 Packages.Save(EditorCommon.RESOURCES_PACKAGE_FILE_PATH);
         }
 
-        /// <summary>
-        ///   增加了一个包数据
-        /// </summary>
+        /// <summary>增加了一个包数据</summary>
         public bool AddPack(ResourcesPackagesData.Package pack)
         {
             if (string.IsNullOrEmpty(pack.Name))
@@ -60,9 +44,7 @@ namespace GS.AssetBundlePacker
             return true;
         }
 
-        /// <summary>
-        ///   删除一个包数据
-        /// </summary>
+        /// <summary>删除一个包数据</summary>
         public void DeletePack(string name)
         {
             if (Packages.Data.Packages.ContainsKey(name))
@@ -71,9 +53,7 @@ namespace GS.AssetBundlePacker
             }
         }
 
-        /// <summary>
-        ///   更新包名
-        /// </summary>
+        /// <summary>更新包名</summary>
         public void UpdatePackName(string name, string new_name)
         {
             if (name == new_name)
@@ -89,9 +69,7 @@ namespace GS.AssetBundlePacker
             DeletePack(name);
         }
 
-        /// <summary>
-        ///   添加选中的资源数据至包中
-        /// </summary>
+        /// <summary>添加选中的资源数据至包中</summary>
         public void AddSelectionAsset(ResourcesPackagesData.Package pack)
         {
             if (pack == null)
@@ -131,9 +109,7 @@ namespace GS.AssetBundlePacker
             }
         }
 
-        /// <summary>
-        ///   从包中移除资源
-        /// </summary>
+        /// <summary>从包中移除资源</summary>
         public void RemoveAsset(ResourcesPackagesData.Package pack, string asset)
         {
             if (pack == null)
@@ -142,28 +118,19 @@ namespace GS.AssetBundlePacker
             if (pack.AssetList.Contains(asset))
                 pack.AssetList.Remove(asset);
         }
-
-        /// <summary>
-        ///   
-        /// </summary>
+        
         void OnEnable()
         {
             LoadData();
         }
-
-        /// <summary>
-        ///   
-        /// </summary>
+        
         void OnInspectorUpdate()
         {
             //Debug.Log("窗口面板的更新");
             //这里开启窗口的重绘，不然窗口信息不会刷新
             this.Repaint();
         }
-
-        /// <summary>
-        ///   
-        /// </summary>
+        
         void OnGUI()
         {
             GUI.color = Color.white;
@@ -260,9 +227,10 @@ namespace GS.AssetBundlePacker
             }
         }
 
-        [MenuItem("AssetBundle/Windows/Resources Package Window")]
+        [MenuItem("AssetBundle/Windows/配置AssetBundle资源包")]
         public static void Open()
         {
             EditorWindow.GetWindow<ResourcesPackageWindow>(false, "Resources Package", true).Show();
-        }    }
+        }
+    }
 }
